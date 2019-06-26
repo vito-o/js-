@@ -355,5 +355,122 @@ console.log(c) */
  * delete x;
  * delete this.x 
  * 
+ * 6.4检测属性
+ * 
+ * js对象可以看做属性的集合，我们经常会检测集合中成员的所属关系-判断某个属性是否存在于
+ * 某个对象中。可以通过in运算符、hasOwnProperty()和propertyIsEnumerable()方法来完成
+ * 这个工作，甚至通过属性查询也可以做到这一点
+ * 
+ * in运算符的左侧是属性名（字符串）, 右侧是对象。如果对象的自有属性或继承属性中包含这个
+ * 属性则返回true
+ *  var o = { x : 1 }
+    'x' in o;  //true  x 是 o 的属性
+    'y' in o;  //false y 不是o的属性
+    'toString' in o;   //true o继承toSting属性
+ * 
+ * 对象的hasOwnProperty()方法用来检测给定的名字是否是对象的自有属性。对于继承属性它将
+ * 返回false
+ * 
+ * var o = { x : 1}
+ * o.hasOwnProperty('x')    //true o有一个自有属性x
+ * o.hasOwnProperty('y')    //false o中不存在属性y
+ * o.hasOwnProperty('toString') //false toString是继承属性
+ * 
+ * propertyIsEnumerable()是hasOwnProperty()的增强版，只有检测到时自有属性且这个属性
+ * 的可枚举性（enumerable attribute）为true时它才返回true。某些内置属性是不可枚举的。
+ * 通常由js代码创建的属性是可枚举的，除非在ECMAScript5中使用一个特殊的方法来改变属性的
+ * 可枚举性，随后会提到
+ * var o - inherit({y:2})
+ * o.x = 1
+ * o.propertyIsEnumerable('x')  //true o有一个可枚举的自有属性x
+ * o.propertyIsEnumerable('y')  //false y是继承来的
+ * Object.prototype.prototypeIsEnumerable('toString')   //false 不可枚举
+ * 
+ * 除了使用in运算符之外，另一种更简便的方法是使用'!=='判断一个属性是否是Undefined
+ * var o = {x:1}
+ * o.x !== undefined    //true o中有属性x
+ * o.y !== undefined    //false o中没有属性y
+ * o.toString !== undefined //true o继承了toString属性
+ * 
+ * 然而有一种场景只能使用in运算符而不能使用上述属性访问的方式。in可以区分不存在的属性和
+ * 存在但值为undefined的属性
+ * var o = {x:undefined}
+ * o.x !== undefined    //false 属性存在，但值为undefined
+ * o.y !== undefined    //false 属性不存在
+ * 'x' in o             //true 属性存在
+ * 'y' in o             //false 属性不存在
+ * delete o.x           //删除了属性x
+ * 'x' in o             //false 属性不再存在
+ * 注意，上述代码中使用的是'!=='运算符，而不是'!='。 '!=='可以区分undefined和null.
+ * 又是则不必作这种区分：
+ * 
+ * //如果o中函数属性x，且x的值不是null或undefined，o.x乘以2
+ * if(o.x != null) o.x *=2;
+ * //如果o中含有属性x，且x的值不能转换为false，o.x乘以2
+ * //如果x是undefined、null、false、 ''、0或NaN，则它保值不变
+ * 
+ * 6.5枚举属性
+ * 除了检测对象的属性是否存在，我们还会经常遍历对象的属性。通常使用for/in循环遍历，
+ * ECMAScript5提供了两个更好用的代替方案
+ * 
+ * 5.5.4节讨论过for/in循环，for/in循环可以在循环体中遍历对象中所有可枚举的属性（包括
+ * 自有属性和继承的属性），把属性名称赋值给循环变量。对象继承的内置方法不可枚举的，但
+ * 在代码中给对象添加的属性都是可枚举的（除非用下午中提到的一个方法将他们转换为不可枚举
+ * 的）
+ * 
+ * var o = {x:1, y:2, z:3}  //三个可枚举的自有属性
+ * o.propertyIsEnumerable('toString')   //false 不可枚举
+ * for(p in o)              //遍历属性
+ *  console.log(p)          //输出x、y和z，不会输出toString
+ * 
+ * 有许多实用工具库给Object.prototype添加了新的方法或属性，这些方法和属性可以被所有对象
+ * 继承并使用。然而zaiECMAScript5标准之前，折现新添加的方法是不能定义为不可枚举的，因此
+ * 他们都可以在for/in循环中枚举出来。为了避免这种强开，需要过滤for/in循环返回的属性
+ * 
+ * for(p in o){
+ *  if(!o.hasOwnProperty(p)) continue   //跳过继承的属性
+ * }
+ * 
+ * for(p in o){
+ *  if(typeof o[p] === 'function') continue;    //跳过方法
+ * }
+ * 
+ * 例6-2定义了一些有用的工具函数来操作对象的属性，这些函数用到了for/in循环。实际上
+ * extend()函数经常出现在js使用工具库中。
+ * 
+ * 例6-2：用来枚举属性的对象工具函数
+ * 
+ * 把p中的可枚举属性复制到o中，并返回o，如果o和p中含有同名属性，则覆盖o中的属性，这个
+ * 函数并不处理getter和setter以及赋值属性
+ * 
+ * function extend(o, p){
+ *  for(prop in p){
+ *      o[prop] = p[prop]
+ *  }
+ *  return o
+ * }
+ * 
+ * 将p中的可枚举属性复制至o中，并返回o，如果o和p中有相同的属性，o中的属性将不受影响，
+ * 这个函数并处理getter和setter以及赋值属性
+ * function merge(o, p){
+ *  for(prop in p){
+ *      if(o.hasOwnProperty[prop]) continue;
+ *      o[prop] = p[prop]
+ *  }
+ *  return o
+ * }
+ * 
+ * 如果o中的属性在p中没有同名属性，则从o中删除这个属性
+ * function resetrict(o, p){
+ *  for(prop in o){
+ *      if(!(prop in p)) delete o[prop]
+ *  }
+ *  return o
+ * }
+ * 
+ * 
  * 
  */
+
+
+ 
