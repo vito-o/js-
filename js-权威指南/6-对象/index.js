@@ -468,9 +468,179 @@ console.log(c) */
  *  return o
  * }
  * 
+ * 如果o中的属性在p中存在同名属性，则从o中删除这个属性
+ * 
+ * function subtract(o, p){
+ *  for(prop in p){
+ *      delete o[prop]
+ *  }
+ *  return o
+ * }
+ * 
+ * 返回一个新对象，这个对象同时拥有o的属性和p的属性，如果o和p中有重名属性，使用p中的属性值
+ * function union(o, p){
+ *  return extend(extend({},o), p)
+ * }
+ * 
+ * 返回一个新对象，这个对象拥有同时在o和p中出现的属性，很像求o和p的交集，但p中属性的值
+ * 被忽略
+ * function intersection(o, p){
+ *      return restrict(extend({},o), p)
+ * }
+ * 
+ * 返回一个数组，这个数组包含的是o中可枚举的自有属性的名称
+ * function keys(o){
+ *      if(typeof o !== 'object') throw TypeError()
+ *      var result = []
+ *      for(var prop in o){
+ *          if(o.hasOwnProperty(prop))
+ *              result.push(prop)
+ *      }
+ *      return result
+ * }
+ * 
+ * 除了for/in循环之外，ECMAScript5定义了两个用以枚举属性的名称的函数。第一个是
+ * Object.keys(),它返回一个数组，这个数组由对象中可枚举的自有属性的名称组成，它的
+ * 工作原理和例6-2中的工具函数keys()类似
+ * 
+ * ECMAScript 5中第二个枚举属性的函数是Object.getOwnPropertyNames(),它和Object.keys()
+ * 类似，只是它返回对象的所有自有属性的名称，而不仅仅是可枚举的属性。在ECMAScript 3
+ * 中是无法实现的类似的函数的，因为ECMAScript3中没有提供任何方法获取对象不可枚举的属性
+ * 
+ * 6.6属性getter和setter
+ * 
+ * 我们知道，对象是由名字、值和一组特性（attribute）构成的。在ECMAScript5中，属性值可以用
+ * 一个或两个方法替代，这两个方法就是getter和setter。由getter和setter定义的属性称作
+ * '存取器属性'（accessor property）,他不同于‘数据属性’(data property)，数据属性
+ * 只有一个简单的值
+ * 
+ * 当储蓄查询存取器属性的值时，js调用getter方法（无参数）。这个方法的返回值就是属性
+ * 存取表达式的值。当程序设置一个存取器属性的值时，js调用setter方法，将赋值表达式右侧
+ * 的值当做参数传入setter。从某种意义上讲，这个方法负责‘设置’属性值。可以忽略setter
+ * 方法的返回值。
+ * 
+ * 和数据不同，存取器属性不具有可写性（writable attribute）。如果属性同时具有setter
+ * 和getter方法，那么他是一个读/写属性。如果他只有getter方法，那么他是一个只读属性。
+ * 如果他只有setter方法，那么它是一个只写属性（数据属性中有一些例外），读取只写属性总
+ * 是返回undefined
+ * 
+ * 定义存取器属性最简单的方法是使用对象直接量语法的一种扩展写法：
+ * 
+ * 
+ var o = {
+     //普通的数据属性
+     data_prop:value,
+     //存取器属性都是成对定义的函数
+     get accessor_prop(){},
+     set accessor_prop(value){}
+
+ }
+ * 
+ * 存取器属性定义为一个或两个属性同名的函数，这个函数没有使用function关键字，而是使用
+ * get和set.z注意，这里没有使用冒号将属性名和函数体分隔开，但在函数体的结束和下一个方法
+ * 或数据属性之间有逗号分隔。例如，思考下面这个表示2d笛卡尔点坐标的对象。他有两个普通的
+ * 属性x和y分别表示对应点的X坐标和Y坐标，它还有两个等价的存取器属性来表示点的极坐标
  * 
  * 
  */
+/* 
+var p = {
+    x:1.0,
+    y:1.0,
 
+    //r是可读写的存取器属性，它有getter和setter
+    //函数体结束后不要忘记带上逗号
+    get r(){return Math.sqrt(this.x*this.x + this.y*this.y)},
+    set r(newvalue){
+        
+        var oldvalue = Math.sqrt(this.x*this.x + this.y*this.y)
+        var ratio = newvalue/oldvalue
+        this.x *= ratio
+        this.y *= ratio
+    },
+    //theta是只读存取器属性，它只有getter方法
+    get theta(){return Math.atan2(this.y, this.x)}
+} */
 
- 
+/**
+ * 注意这段代码中getter和setter里this关键字的用法。js把这些函数当做对象的方法来调用
+ * 也就是说，在函数体内的this指向标识这个点的对象，因此，r属性的getter方法可以通过
+ * this.x和this.y引用x和y属性
+ * 
+ * 和数据属性一样，存取器属性是可以继承的，因此可以将上述代码中的对象p当做另一个‘点’
+ * 的原型。可以给新对象定义它的x和y属性，但r和theta属性是继承来的
+ * 
+ * var q = inherit(p)
+ * q.x = 1, q.y = 1
+ * console.log(q.r)
+ * console.log(q.theta)
+ * 
+ * 这段代码用存取器属性定义api，api提供了标识同一数组的两种方法。还有很多场景可以用到存取器属性
+ * 比如智能检测属性的写入值及其每次属性读取时返回不同值
+ * 
+ * //这个对象产生严格自增的序列号
+ */
+/* 
+var serialnum = {
+    //这个数据属性包含下一个序列号
+    //$符号暗示这个属性是一个私有属性
+    $n:0,
+
+    //返回当前值，然后自增
+    get next(){return this.$n++},
+
+    //给n设置新的值，但只有当它比当前值大时才设置成功
+    set next(n){
+        if(n >= this.$n) this.$n = n;
+        else throw '序列号的值不能比当前值小'
+    }
+} 
+*/
+
+/**
+ * 最后我们再来看一个例子，这个例子使用getter方法实现一种'神奇'的属性
+ * 这个对象有一个可以返回随机数的存取器属性
+ * 例如，表达式'random.octet'产生一个随机数
+ * 每次产生的随机数都在0~255之间
+ */
+
+/* 
+var random = {
+    get octet(){ return Math.floor(Math.random()*256) },
+    get uint16(){ return Math.floor(Math.random()*65536) },
+    get int16(){ return Math.floor(Math.random()*65536) - 32767 }
+} 
+*/
+
+/**
+ * 6.7 属性的特性
+ * 
+ * 除了包含名字和值之外，属性还包含一些标识他们可写、可枚举和可配置的特性。在ECMAScript3
+ * 中无法设置折现特性，所以通过ECMAScript3的程序创建的属性都是可写的、可枚举和可配置的
+ * 且无法对这些特性做修改。本节将讲述ECMAScript5中查询和设置这些特性的API。这些API对于
+ * 库的开发者来说非常重要，因为：
+ * 。可以通过这些API给原型对象添加方法，并将他们设置成不可枚举的，这让他们看起来更像内置
+ * 方法
+ * 。可以通过这些API给对象定义不能修改或删除的属性，借此“锁定”这个对象。
+ * 
+ * 在本节里，我们将存取器属性的getter和setter方法看成是属性的特性。按照这个逻辑，我们也
+ * 可以把数据属性的值同样看作属性的特性。因此，可以认为一个属性包含一个名字和4个特性。
+ * 数据属性的4个特性分别是他的值（value）、可写性（writable）、可枚举性（enumerable）
+ * 和可配置性（configurable）。存取器属性不具有值（value）特性和可写性，他们的可写性
+ * 是由setter方法存在与否决定的。因此存取器属性的4个特性是读取（get）、写入（set）、
+ * 可枚举性和可配置性。
+ * 
+ * 为了实现属性特性的查询和设置操作，ECMAScript5中定义了一个名为“属性描述符”（property
+ * descriptor）的对象，这个对象代表那4个特性。描述对象的属性和他们所描述的属性特性是
+ * 同名的。因此，数据属性的描述符对象的属性有value、writable、enumerable和configurable
+ * 存取器属性的描述符对象则用get属性和set属性代替value和writable。其中writable、enumerable
+ * 和configurable都是布尔值，当然，get属性和set属性是函数值。
+ * 
+ * 通过调用Object.getOwnPropertyDescriptor()可以获得某个对象特定属性的属性描述符
+ * 
+ * //返回{value:1, writable:true, enumerable:true, configurable:true}
+ * Object.getOwnPropertyDescriptor({x:1}, 'x')
+ * 
+ * 
+ * 
+ */
