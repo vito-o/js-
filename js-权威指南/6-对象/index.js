@@ -641,6 +641,191 @@ var random = {
  * //返回{value:1, writable:true, enumerable:true, configurable:true}
  * Object.getOwnPropertyDescriptor({x:1}, 'x')
  * 
+ * //查询上文中定义的random对象的octet属性
+ * 返回{get:func, set:undefined, enumerable:true, configurable:true}
+ * Object.getOwnPropertyDescriptor(random, 'octet')
+ * 
+ * 对于继承属性和不存在的属性,返回undefined
+ * Object.getOwnPropertyDescriptor({}, 'x')     //undefined,没有这个属性
+ * Object.getOwnPropertyDescriptor({}, 'toString')  //undefined, 继承属性
+ * 
+ * 从函数名字就可以看出，Object.getOwnPropertyDescriptor()只能得到自有属性的描述符。
+ * 想要获得继承属性的特性，需要遍历原型链（参照6.8.1节的Object.getPrototypeOf()）
+ * 
+ * 想要设置属性的特性，或者想让新建属性具有某种特性，则需要调用Object.defineProperty()
+ * 传入要修改的对象、要创建或修改的属性的名称以及属性描述符对象：
+ */
+/* 
+ var o = {} //创建一个空对象
+ //添加一个不可枚举的数据属性x，并赋值为1
+ Object.defineProperty(o, 'x', {
+     value:1,
+     writable: true,
+     enumerable: false,
+     configurable: true
+ })
+
+ //属性是存在的，但不可枚举
+ o.x;               // 1
+ Object.keys(o)     // []
+
+ //现在对属性x做修改，让他变成只读
+ Object.defineProperty(o, 'x', {writable: false})
+
+ //视图更改这个属性的值
+ o.x = 2;           //操作失败但不报错，而在严格模式中抛出类型错误异常
+ o.x                // 1
+
+ //属性依然是可配置的，因此可以通过这种方式对它进行修改
+ Object.defineProperty(o, 'x', {value:2})
+ o.x    // 2
+
+ //现在将x从数据属性修改为存储器属性
+ Object.defineProperty(o, 'x', {get:function(){return 0}})
+ o.x    //0
+ */
+/**
+ * 传入Object.defineProperty()的属性描述符对象不必包含所有4个特性。对于新创建的属性来说
+ * 默认的特性是false或者undefined。对于修改的已有属性来说，默认的特性值没有做任何修改，
+ * 注意，这个方法要么修改已有属性要么新建自有属性，但不能修改继承属性。
+ * 
+ * 如果要同时修改或创建多个属性，则需要使用Object.defineProperties().第一个参数是要
+ * 修改的对象，第二个参数是一个映射表，它包含要新建或修改的属性的名称，以及他们的属性描述符
+ */
+
+/*  var p = Object.defineProperties({}, {
+     x:{value:1, writable:true, enumerable:true, configurable:true},
+     y:{value:1, writable:true, enumerable:true, configurable:true},
+     r:{
+         get:function(){return Math.sqrt(this.x*this.x + this.y*this.y)},
+         enumerable:true,
+         configurable:true
+     }
+ }) */
+
+ /**
+  * 这段代码从一个空对象开始，然后给他添加两个数据属性和一个只读存取器属性。最终
+  * Object.defineProperties()返回修改后的对象（和Object.defineProperty()一样）
+  * 
+  * 对于那些不允许创建或修改的属性来说，如果用Object.defineProperty()和Object.defineProperties()
+  * 对其操作（新建或修改）就会报出类型异常，比如，给一个不可扩展的对象新增属性就会抛出
+  * 类型错误异常。造成这些方法抛出类型错误异常的其他原因则和特性本身相关。可写性控制着对值
+  * 特性的修改。可配置性控制着对其他特性（包括属性是否可以删除）的修改，然而规则远不止这么
+  * 简单，例如，如果属性是可配置的话，则可以修改不可写属性的值，同样，如果属性是不可配置的
+  * 任然可以将可写属性修改为不可写属性。下面是完整的规则，任何对Object.defineProperty()
+  * 或Object.defineProperties()违反规则的使用都会抛出类型错误异常：
+  * 。如果对象是不可扩展的，则可以编辑已有的自有属性，但不能给它添加新属性
+  * 。如果属性是不可配置的，则不能修改它的可配置性和可枚举性
+  * 。如果存取器属性是不可配置的，则不能修改其getter和setter方法，也不能将它转为数据属性
+  * 。如果数据属性是不可配置的，则不能将它的可写性从false修改为true，但可以从true改为false
+  * 。如果数据属性是不可配置且不可写的，则不能修改它的值。然而可配置但不可写属性的值时可以
+  * 修改的（实际上是先将它标记为可写的，然后修改它的值，最后转换为不可写的）
+  * 
+  * 例6-2中实现了extend()函数，这个函数吧这个对象的属性复制到另一个对象中。这个函数只是简单
+  * 地复制属性名和值，没有复制属性的特性。而且也没有复制存取器的getter和setter方法，只是将
+  * 他们简单地转换为静态的数据属性。例6-3给出了改进的extend（），它使用Object.getOwnPropertyDescriptor()
+  * 和Object.defineProperty()对属性的所有特性进行复制。新的extend（）作为 不可枚举属性添加
+  * 到Object.prototype中，因此它是Object上定义的新方法，而不是一个独立的函数
+  */
+
+  /**
+   * 例6-3复制属性的特性
+   * 
+   * 给Object.prototype添加一个不可枚举的extend()方法
+   * 这个方法继承自调用它的对象，将作为参数传入的对象的属性一一复制
+   * 除了值之外，也复制属性的所有特性，除非在目标对象中存在同名的属性，
+   * 参数对象的所有自有对象（包括不可枚举的属性）也会一一复制
+   */
+Object.defineProperty(Object.prototype, 
+    'extend',
+    {
+        writable: true,
+        enumerable: false,
+        configurable: true,
+        value: function(o){
+            //得到所有的自有属性，包括不可枚举属性
+            var names = Object.getOwnPropertyNames(o)
+            //遍历
+            for(var i = 0; i < names.length; i++){
+                //如果属性已经存在，则跳过
+                if(names[i] in this) continue;
+                //获得o中的属性的描述符
+                var desc = Object.getOwnPropertyDescriptor(o, names[i])
+                //用他给this创建属性
+                Object.defineProperty(this, names[i], desc)
+            }
+        }
+    }
+)
+
+/**
+ * getter和setter的老式API
+ * 可以通过6.6节描述的对象直接量语法给新对象定义存取器属性，但不能查询属性的getter和setter
+ * 方法或给已有的对象添加新的存取器属性。在ECMAScript5中，可以通过Object.getOwnPropertyDescriptor()
+ * 和Object.defineProperty()来完成这些工作
+ * 
+ * 在ECMAScript5标准被采纳之前，大多数js的实现（IE浏览器除外）已经可以支持对象直接量语法中
+ * get和set写法。这些实现提供了非标准的老式API用来查询和设置getter和setter。这些API由4个
+ * 方法组成，所有对象都拥有这些方法。__lookupGetter__()和__lookupSetter__()用以返回一个
+ * 命名属性的getter和setter方法。__defineGetter__()和__defineSetter__()用以定义getter
+ * 和setter，这两个函数的第一个参数是属性名字，第二个参数是getter和setter方法。这4个方法
+ * 都是以两条下划线做前缀，两条下划线作后缀，以表明他们是非标准的方法。兵书第三部分没有对
+ * 标准的方法做介绍
+ * 
+ * 
+ * 6.8 对象的三个属性
+ * 每一个对象都有与之相关的原型(prototype)、类（class）和可扩展性（extensible attribute）
+ * 下面几节将会展开讲述这些属性有什么作用，以及如何查询和设置他们
+ * 
+ * 6.8.1原型属性
+ * 
+ * 对象的原型属性是用来继承属性的，这个属性如此重要，以至于我们经常把“o的原型属性”直接叫做
+ * o的原型
+ * 原型属性是在实例对象创建之初就设置好的，回想一下6.1.3节提到的，通过对象直接量创建的对象
+ * 使用Object.prototype作为他们的原型。通过new创建的对象使用构造函数的prototype属性作为
+ * 他们的原型。通过Object.create()创建的对象使用第一个参数（也就可以是Null）作为他们的原型
+ * 
+ * 在ECMAScript5中，将对象作为参数传入Object.getPrototypeOf()可以查询他的原型。在ECMASCript
+ * 3中，则没有与之等价的函数，但经常使用表达式o.constructor.prototpye来检测一个对象的原型
+ * 通过new表达式创建的对象，通常继承一个constructor属性，这个属性指代创建这个对象的构造函数
+ * 更更多细节放在9.2节进一步讨论，9.2节还解释了使用这个方法来检测对象原型的方式并不可靠的原因。
+ * 注意，通过对象直接量或Object.create()创建的对象包含一个名为constructor的属性，这个属性指代
+ * Object()构造函数。因此，constructor.prototype才是对象直接量的真正的原型，但对于通过
+ * Object.create()创建的对象则往往不是这样
+ * 
+ * 想要检测一个对象是否是另一个对象的原型（或处于原型链中），请使用isPrototypeOf()方法。
+ * 例如，可以通过p.isPrototypeOf(o)来检测p是否是o的原型
+ */
+/* 
+ var p = {x:1}                      //定义一个原型对象
+ var o = Object.create(p)           //使用这个原型创建一个对象
+ p.isPrototypeOf(o)                 //true: o继承自p
+ Object.prototype.isPrototypeOf(o)  //true：p继承自Object.prototype
+ */
+
+/**
+ * 需要注意的是，isPrototypeOf()函数实现的功能和instanceof运算符非常类似
+ * Mozilla实现的js（包括早些年的Netscaape）对外暴露了一个专门命名为__proto__的属性，用以
+ * 直接查询/设置对象的原型。但并不推荐使用__proto__,因为尽管Safari和Chrome的当前版本都支持
+ * 它，但IE和Opera还未实现它（可能以后也不会实现）。实现了ECMAScript5的FireFox版本依然支持
+ * __proto__,但对修改不可扩展对象的原型做了限制
+ * 
+ * 6.8.2类属性
+ * 
+ * 对象的类属性（class attribute）是一个字符串，用以表示对象的类型信息。ECMAScript3和
+ * ECMAScript5都未提供设置这个属性的方法，并只有一种简洁的方法可以查询它。默认的toString方法
+ * （继承自Object.prototype）返回了如下这种格式的字符串
+ * [object class]
+ * 因此，要想要获得对象的类，可以调用对象的toString()方法，然后提取已返回字符串的第8个到倒数
+ * 第二个之间的字符。不过让人感觉棘手的是，很多对象继承的toString()方法重写了，为了能调用正确
+ * 的toString()版本，必须间接地调用Function.call()方法。例6-4中的classof()函数可以返回传递
+ * 给他的任意对象的类：
  * 
  * 
  */
+
+ function classof(o){
+     if(o === null) return 'Null'
+     if(o === undefined) return 'Undefined'
+     return Object.prototype.toString.call(o).slice(8, -1)
+ }
