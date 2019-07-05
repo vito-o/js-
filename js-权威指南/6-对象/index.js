@@ -821,7 +821,6 @@ Object.defineProperty(Object.prototype,
  * 的toString()版本，必须间接地调用Function.call()方法。例6-4中的classof()函数可以返回传递
  * 给他的任意对象的类：
  * 
- * 
  */
 
  function classof(o){
@@ -829,3 +828,64 @@ Object.defineProperty(Object.prototype,
      if(o === undefined) return 'Undefined'
      return Object.prototype.toString.call(o).slice(8, -1)
  }
+
+/**
+ * classof()函数可以传入任何类型的参数。数字、字符串和布尔值可以直接调用toString()方法，就和
+ * 对象调用toString()方法一样，并且这个函数包含了对null和undefined的特殊处理（在ECMAScript5中
+ * 不需要这些特殊处理。通过内置构造函数（比如Array和Date）创建的对象包含“类属性”（class attribute）
+ * 它与构造函数名称相匹配。宿主对象也包含有意义的“类属性”，但这个具体的js实现有关。通过对象直接量
+ * 和Object.create创建的对象的属性是Object，那些自定义构造函数创建的对象也是一样，类属性也是一样
+ * 类属性也是Object，因此对于自定义的类来说，没办法通过类属性来区分对象的类
+ * 
+ * 6.8.3可扩展性
+ * 
+ * 对象的可扩展性用以表示是否可以给对象添加新属性。所有内置对象和自定义对象都是显示可扩展的，宿主
+ * 对象的可扩展性是由js引擎定义的。在ECMAScript5中，所有的内置对象和自定义对象都是可扩展的，除非
+ * 将他们转换为不可扩展的，同样，宿主对象的可扩展性也是由实现ECMAScript5的js引擎定义的
+ * 
+ * ECMAScript5定义了用来查询和设置对象可扩展性的函数。通过将对象传入Object.isExtensible(),来
+ * 判断该对象是否是可扩展的。如果想将对象转为不可扩展的，需要调用Object.preventExtensions(),
+ * 将待转化的对象作为参数传进去。注意，一旦将对象转换为不可扩展的，就无法在将其转换回可扩展的了。
+ * 同样需要注意的是，preventExtensions()只影响到对象本身的可扩展性。如果给一个不可扩展的对象的原型
+ * 添加原型，这个不可扩展的对象同样会继承这些新特性
+ * 
+ * 可扩展属性的目的是将对象‘锁定’，以避免外界的干扰。对象的可扩展性通常和属性的可配置性与可写性配合
+ * 使用，ECMAScript5定义的一些函数可以更方便地设置多种属性。
+ * 
+ * Object.seal()和Object.preventExtensions()类似，除了能够将对象设置为不可扩展的，还可以将对象
+ * 的所有自有属性都设置为不可配置的。也就是说，不能给这个对象添加新属性，而且它已有的属性也不能删
+ * 除或配置，不过它已有的可写属性已然可以设置。对于那些已经封闭(sealed)起来的对象是不能解封的。可以
+ * 使用Object.isSealed()来检测对象是否封闭。
+ * 
+ * Object.freeze()将更严格低锁定对象 --- ‘冻结’ (frozen)。除了将对象设置为不可扩展的和将其属性
+ * 设置为不可配置之外，还可以将它自有的所有数据属性设置为只读（如果对象的存取器属性具有setter方法）
+ * 存取器属性将不受影响，仍可以通过给属性赋值调用他们）。使用Object.isFrozen()来检测对象是否冻结
+ * 
+ * 6.9序列号对象
+ * 
+ * 对象序列化(serialization)是指将对象的状态转为字符串，也可将字符串还有为对象。ECMAScript5提供了
+ * 内置函数JSON.stringify()和JSON.parse()用来序列化和还愿js对象。这些方法都是用JSON作为数据交换
+ * 格式，JSON的全称是‘javaScript Object Notation’ --javaScript对象表示法，他的语法和js对象与数组
+ * 直接量非常相近：
+ * var o = {x:1, y:{z:[false, null, ""]}}  //定义一个测试对象
+ * var s = JSON.stringify(o)               //s是'{"x":1, "y":{"z":[false, null, ""]}}'
+ * var p = JSON.parse(s)                   //p是o的深拷贝
+ * 
+ * ECMAScript5中的这些函数的本地实现和http://json.org/json2.js中的公共域ECMAScript3版本的实现
+ * 非常类似，或者说完全一样，因此可以通过引入json2.js模块在ECMAScript3的环境中使用ECMAScript5
+ * 中的这些函数
+ * 
+ * JSON的语法是js语法的子集，它并不能表示js里的所有值。支持对象、数组、字符串、无穷大数字、true
+ * false和null，并且他们可以序列化和还原。NaN、Infinity和-Infinity序列化的结果是null，日期对象
+ * 序列化的结果是ISO格式的日期字符串，但JSON。parse()已然保留他们的字符串状态，而不会将他们还原
+ * 为原始日期对象。函数、RegExp、Error对象和undefined值不能序列化和还原。JSON.stringify()只能
+ * 序列化对象可枚举的自有属性。对于一个不能序列化的属性来说，在序列化后的输出字符串中会将这个属性
+ * 省略掉。JSON.stringify()和JSON.parse()都可以接受第二个参数，通过传入需要序列化或还原的属性列
+ * 表来定制自定义的序列化或还原操作。
+ * 
+ * 6.10对象方法
+ * 
+ */
+
+
+
