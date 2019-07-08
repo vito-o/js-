@@ -885,6 +885,46 @@ Object.defineProperty(Object.prototype,
  * 
  * 6.10对象方法
  * 
+ * 上文意见讨论过，所有的js对象都是从object.prototype继承属性（除了那些不通过原型显示创建的对象）
+ * 这些继承属性主要是方法，因为js程序员普遍对继承方法更感兴趣。我们已经讨论或hasOwnProperty()、
+ * propertyIsEnumerable()和isPrototypeOf()这三个方法，以及在Object构造函数里定义的静态函数Object
+ * .create()和Object.getPrototypeOf()等。本节将对定义在Object.prototype里的对象方法展开讲解，
+ * 这些方法非常好用而且使用广泛，但一些特性的类会重写这些方法。
+ * 
+ * 6.10.1 toString()方法
+ * 
+ * toString()方法没有参数，它将返回一个表示调用这个方法对象值得字符串。在需要将对象转换为字符串
+ * 在需要将对象转换为字符串的时候，js都会调用这个方法。比如，使用'+'原算法链接一个字符串和一个对象
+ * 时或者在希望使用字符串的方法中使用了对象时都会调用toString()
+ * 
+ * 默认的toString()方法的返回值带有的信息量很少（尽管他的检测对象的类型时非常有用），例如，下面
+ * 这行代码的计算结果为字符串'[object Object]'
+ * 
+ * var s = {x:1, y:1}.toString();
+ * 
+ * 由于默认的toString()方法并不会输出更多有用的信息，因此很多类都戴欧自定义的toString()。例如
+ * 当数组转换为字符串的时候，结果是一个数组元素列表，只是每个元素都转换成了字符串，再比如，当函数
+ * 转换成字符串的时候，得到函数的源代码。第三部分有关于toString()的详细文档说明，比如Array.toString()
+ * Date.toString()以及Function.toString()
+ * 
+ * 6.10.2 toLocaleString()方法
+ * 除了基本的toString()方法之外，对象都包含了toLocaleString()方法，这些方法返回一个表示这个对象的
+ * 本地化字符串。Object中默认的toLocalString()方法并不做任何本地化自身的操作，它仅调用toString()
+ * 方法并返回对应只。Date和Number类对toLocaleString()方法做了定制，可以用它对数字、日期和时间做
+ * 本地化的转换。Array类的toLocaleString()方法和toString()方法很像，唯一的不同是每个数组元素会调用
+ * toLocaleString()方法转换为字符串，而不是调用各自的toString()方法
+ * 
+ * 6.10.3 toJSON()方法
+ * 
+ * Object.prototype实际上没有toJSON()方法，但对于需要执行序列化的对象来说，JSON.Stringify()方法
+ * 会调用toJSON()方法。如果在待序列化的对象中存在这个方法，则调用它，返回值即是序列化的结果，而不是
+ * 原始的对象。具体事例参见Date.toJSON()
+ * 
+ * 6.10.4 valueOf()方法
+ * 
+ * valueOf()方法和toString()方法非常类似，但往往当js需要将对象转换为某种原始值而非字符串的时候才
+ * 会调用它，尤其是转换为数字的时候。如果在需要使用原始值的上下文中使用了对象，js就会自动调用这个
+ * 方法。默认的valueOf()方法不足为奇，但有些内置类自定义了valueOf()方法（Date.valueOf()）
  */
 
 
