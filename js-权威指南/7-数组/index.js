@@ -200,4 +200,122 @@
  * 
  * 使用for循环是遍历数组元素最常见的方法：
  * 
+ * var keys = Object.keys(o);   //获得o对象属性名组成的数组
+ * var values = []              //在数组中存储匹配属性的值
+ * for(var i = 0; i < keys.length; i++){    //对于数组中每个索引
+ *  var key = keys[i]           //获得索引处的键值
+ *  values[i] = o[key];         //在values数组中保存属性值
+ * }
+ * 在镶嵌循环或其他性能非常重要的上下文中，可以看到这种基本的数组遍历需要优化，数组的长度应该只查询
+ * 一次而非每次都要循环
+ * 
+ * for(var i = 0, len = keys.length; i < len; i++){
+ *    //循环体任然不变
+ * }
+ * 
+ * 这些例子假如数组是稠密的，并且所有的元素都是合法数据。否则 ，使用数组元素之前应该检测他们。如果
+ * 想要排除null、undefined和不存在的元素，代码如下：
+ * 
+ * for(var i = 0; i < a.length; i++){
+ *    if(!a[i]) continue;   //跳过null、undefined和bu存在的元素
+ *    //循环体
+ * }
+ * 
+ * 如果指向跳过undefined和不存在的元素,代码如下：
+ * for(var i = 0; i < a.length; i++){
+ *    if(a[i] === undefined) continue;  //跳过undefined+不存在的元素
+ *    //循环体
+ * }
+ * 
+ * 最后，如果指向跳过不存在的元素而仍然要处理存在的undeined元素，代码如下：
+ * for(var i = 0; i < a.length; i++){
+ *    if(!(i in a)) continue;   //跳过不存在的元素
+ *    //循环体
+ * }
+ * 
+ * 还可以使用for/in循环处理稀疏数组。循环每次将一个可枚举的属性名（包括数组索引）赋值给循环变量。
+ * 不存在的索引不会遍历到：
+ * 
+ * for(var index in sparseArray){
+ *    var value = sparseArray[index]
+ *    //others
+ * }
+ * 
+ * 在6.5节已经注意到for/in循环能够枚举继承的属性名，如添加到Array.prototype中的方法。由于这个原因
+ * 在数组上不应该使用for/in循环，除非使用额外的检测方法来过滤不想要的属性。如下检测代码取其一即可：
+ * for(var i in a){
+ *    if(!a.hasOwnProperty(i)) continue;  //跳过继承的属性
+ *    //循环体
+ * }
+ * for(var i in a){
+ *    //跳过不是非负整数的i
+ *    if(String(Math.floor(Math.abs(Number(i)))) !== i) continue
+ * }
+ * ECMAScript规范运行for/in循环以不同的顺序遍历对象的属性。通常数组元素的遍历实现是升序，但不能
+ * 保证一定是这样的。特别地，如果数组同时拥有对象属性和数组元素，返回的属性名很可能是按照创建的顺序
+ * 而非数值的大小顺序。如何处理这个问题的实现各不相同，如果算法依赖于遍历的顺序，那么最好不要使用
+ * for/in而用常规的for循环。
+ * 
+ * ECMAScript5定义了一些遍历数组元素的新方法，按照索引的顺序按个传递给定义的一个函数。这些方法中
+ * 最常用的就是forEach()方法
+ * var data = [1,2,3,4,5]       //这是要遍历的数组
+ * var sumOfSquares = 0;        //要得到数据的平方和
+ * data.forEach(function(x){    //把每个元素传递给此函数
+ *    sumOfSquares += x*x       //平方相加
+ * })
+ * sumOfSQUARES                 //结果
+ * 
+ * forEach()和相关的遍历方法使得数组拥有简单而强大的函数式编程风格。他们涵盖在7.9节中，当涉及函数式
+ * 编程是，还将在8.8节再次碰到他们
+ * 
+ * 7.7 多维数组
+ * 
+ * js不支持真正的多维数组，但可以用数组的数组来近似。访问数组的数组中的元素，只要简单地使用两次[]
+ * 操作符即可。例如，假设变量matrix是一个数组的数组，它的基本元素是数值，那么matrix[x]的每个元素
+ * 是包含一个数值数组，访问数组中特定数值的代码未matrix[x][y]。这里有一个具体的例子，它使用二维数组
+ * 作为一个九九乘法表：
+ */
+
+/*  
+var table = new Array(10)
+for(var i = 0; i < table.length; i++){
+  table[i] = new Array(10)
+}
+for(var row = 0; row < table.length; row++){
+  for(col = 0; col < table[row].length; col++){
+    table[row][col] = row*col
+  }
+}
+
+var product = table[5][7] 
+*/
+
+/**
+ * 7.8数组方法
+ * 
+ * ECMAScript3 在Array.prototype中定义了一些很有用的操作数组的函数，这意味着这些函数作为任何数组
+ * 的方法都是可用的。下面几节介绍ECMAScript3中的这些方法。想通常一样，完整的细节参见第四部分关于
+ * 数组的内容。ECMAScript5中新增了一些新数组遍历方法，他们涵盖在7.9节中。
+ * 
+ * 7.8.1 join
+ * Array.join()方法将数组中所有元素都转换为字符串并连接在一起，返回最后生成的字符串。可以指定一个
+ * 可选的字符串在生成的字符串中来分割数组的各种元素。如果不指定分隔符，默认使用逗号。如一下代码所示：
+ * var a = [1, 2, 3]    //创建一个包含三个元素的数组
+ * a.join()             // 1,2,3
+ * a.join(' ')          // 1 2 3
+ * a.join('')           // 123
+ * var b = new Array(10)//长度为10 的空数组
+ * b.join('-')          //'---------'9个连字号组成的字符串
+ * 
+ * Array.join()方法是String.split()方法的逆向操作，后者是将字符串分割成若干块来创建一个数组
+ * 
+ * 7.8.2 reverse()
+ * 
+ * Array.reverse()方法将数组中的元素蛋刀顺序，返回逆序的数组。它采取了替换；换句话说，它不通过重新
+ * 排列的元素创建新的数组，而是在原先的数组中重新排列他们。例如，下面的代码使用reverse()和join()
+ * 方法生成字符串'3, 2, 1'
+ * 
+ * var a = [1, 2, 3]
+ * a.reverse().join()   // '3,2,1',并且现在的a是[3, 2, 1]
+ * reverse()是在原先的数组中重新排列他们, (也就是原始值改变了)
  */
