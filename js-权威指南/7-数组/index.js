@@ -601,4 +601,163 @@ try{
  * 的唯一意图。考虑到 6-2鸿的union()函数。它计算两个对象的“并集”，并返回另一个新对象，新对象
  * 具有二者的属性。该函数期待两个对象并返回另一个对象，所以他的工作原理和一个化简函数一样，
  * 并且可以使用reduce()来把它一般化，计算任意数目的对象的“并集”
+ * 
+ * var objects = [{x:1}, {y:2}, {z:3}]
+ * var merged = objects.reduce(union)
+ * 
+ * 
+ * 7.9.6 indexOf()和lastIndexOf()
+ * 
+ * indexOf()和lastIndexOf()搜索整个数组中具有给定值得元素，返回找到的第一个元素的索引或者如果没有
+ * 找到就返回-1。indexOf()从头至尾搜索，而lastIndexOf()则反向搜索。
+ * a = [0, 1, 2, 1, 0]
+ * a.indexOf(1)     1: a[1]是1
+ * a.lastIndexOf(1) 3: a[3]是1
+ * a.indexOf(3)     -1: 没有值为3的元素
+ * 
+ * 不同于本节描述的其他方法，indexOf()和lastIndexOf()方法不接收一个函数作为其参数。第一个参数就是需要
+ * 搜索的值，第二个参数是可选的：指定数组中的一个缩影，从哪里开始搜索。如果省略该参数，indexOf()从头
+ * 开始搜索。第二个参数也可以是负数，它代表相对数组末尾的偏移量，对于splice()方法：例如，-1指定数组的
+ * 最后一个元素
+ * 
+ * 如下函数在一个数组中搜索指定的值并返回包含所有匹配的数组索引的一个数组。它展示了如何运用indexOf()
+ * 的第二个参数来查找除了第一个以外匹配的值
+ * 
+ * function findAll(a, x){
+ *    var results = []
+ *        len = a.length,
+ *        pos = 0;
+ * 
+ *    while(pos < len){
+ *        pos = a.indexOf(x, pos)
+ *        if(pos === -1) break;
+ *        results.push(pos)
+ *        pos = pos + 1
+ *    }
+ * 
+ *    return results;
+ * }
+ * 
+ * 注意，字符串也有indexOf()和lastIndexOf()方法，他们和数组方法的功能类似
+ * 
+ * 7.10 数组类型
+ * 
+ * 我们在本章中到处可以看见数组是具有特殊行为的对象。给定一个位置的对象，判定他是否为数组通常非常有用。在
+ * ECMAScript5中，可以使用Array.isArray()函数来做这件事情
+ * 
+ * Array.isArray([])      // true
+ * Array.isArray({})      // false
+ * 
+ * 但是，在ECMAScript5以前，要区分数组和费数组对象却令人惊讶的困难。typeof操作符在这里帮不上忙，对数组它
+ * 返回'对象'（并且对于除了函数以外的所有对象都是如此）。instanceof操作符只能用于简单的情形
+ * [] instanceof Array    // true
+ * ({}) instanceof Array  // false
+ * 
+ * 使用instanceof的问题是在web浏览器中有可能有多个窗口或窗体存在。每个窗口都有自己的js环境，有自己的全局对象。
+ * 并且，每个全局对象有自己的一组构造函数。因此一个窗体中的对象将不可能是另外窗体中的构造函数的实例。窗体之间的
+ * 混淆不常发生，但这个问题足以证明instanceof操作符不能视为一个可靠的数组检测方法。
+ * 
+ * 解决方案是检查对象的类属性。对数组而言该属性的值时‘Array’，因此在ECMAScript3中isArray()函数的代码可以这样写
+ * var isArray = Function.isArray || function(o){
+ *    return typeof o === 'object' && 
+ *    Object.prototype.toString.call(o) == '[object Array]'
+ * }
+ * 
+ * 实际上，此处类属性的检测就是ECMAScript5中Array.isArray()函数所做的事情。获得对象类属性的技术使用了6.8.2节
+ * 和例6-4中展示的Object.prototype.toString()方法
+ * 
+ * 7.11 类数组对象
+ * 
+ * 我们已经看到，js数组的有些特性是其他对象所没有的：
+ * 。当有新的元素添加到列表中时，自动更新length属性
+ * 。设置length为一个较小值将截段数组
+ * 。从Array.prototype中继承一些有用的方法。
+ * 。其类属性为'Array'
+ * 
+ * 这些特性让js数组和常规的对象有明显的区别。但是他们不是定义数组的本质特性。一种常常完全合理
+ * 的看法把拥有一个数值length属性和对应非负整数属性的对象看做一种类型的数组
+ * 
+ * 时间中这些‘类数组’对象实际上偶尔出现，虽然不能在它们之上直接调用数组方法或者期望length属性
+ * 有什么特殊的行为，但是仍然可以用针对正在数组遍历的代码来遍历它们。结论就是很多数组算法针对
+ * 类数组对象工作的很好，就像针对正在的数组一样。如果算法把数组看成只读的或者如果它们至少保持
+ * 数组长度不变，也尤其这种情况，以下代码为一个常规对象增加一些属性使其变成类数组对象，然后
+ * 遍历生成的维数组的‘元素’；
+ * 
+ * var a = {}
+ * var i = 0;
+ * while(i < 10){
+ *    a[i] = i * i;
+ *    i++;
+ * }
+ * a.length = i;
+ * 
+ * //现在，当做整整的数组遍历它
+ * var total = 0
+ * for(var j = 0; j < a.length; j++){
+ *    total += a[j]
+ * }
+ * 
+ * 8.3.2节描述的Arguments对象就是一个类数组对象。在客户端js中，一些DOM方法（如document.
+ * getElementsByTagName()）也返回类数组对象。下面有一个函数可以用来检测类数组对象：
+ * 
+ * //判定o是否是一个类数组对象
+ * //字符串和函数有Length属性，但是他们
+ * //可以用typeof检测将其排除。在客户端js中，DOM文本节点
+ * //也有length属性，需要用额外判断o.nodeType != 3将其排除
+ * 
+ * function isArrayLike(o){
+ *  if(
+ *    o && 
+ *    typeof o === 'object' &&
+ *    isFinite(o.length) &&
+ *    o.length >= 0 &&
+ *    o.length === Math.floor(o.length) &&
+ *    o.length < 4294967296
+ *  )
+ *    return true
+ *  else
+ *    return false
+ * }
+ * 
+ * 将在7.12节中看到在ECMAScript5中字符串的行为与数组类似（并且有些浏览器在ECMAScript5）之前
+ * 已经让字符串变成可所有的了。然而，类似上述的类数组对象的检测方法针对字符串常常返回false
+ * 他们通常对号当做字符串处理，而非数组
+ * 
+ * js数组方法是特定定义为通用的，因此他们不仅应用在正在的数组而且在类数组对象上都能正确工作。
+ * 在ECMAScript5中，所有的数组方法都是通过的。在ECMAScript3中，除了toString()和toLocaleString()
+ * 以外的所有方法也是通用的。
+ * （concat()方法是一个特例：虽然可以用在类数组对象上，但他没有将那个对象扩充进返回的数组中）
+ * 既然类数组对象没有继承自Array.prototype，那就不能在它们上面直接调用数组方法。尽管如此，
+ * 可以间接地使用Function.call方法调用：
+ * 
+ * var a = {0:'a', 1:'b', 2:'c', length:3}
+ * Array.prototype.join.call(a, '+')
+ * Array.prototype.slice.call(a, 0)
+ * Array.prototype.map.call(a, function(x){
+ *    return x.toUpperCase()
+ * })
+ * 
+ * 7.12 作为数组的字符串
+ * 
+ * 在ECMAScript5中，字符串的行为类似于只读的数组。除了用charAt()方法来访问单个的字符以外，还可以
+ * 使用方括号：
+ * var s = 'test'
+ * s.charAt(0)
+ * s[1]
+ * 
+ * 当然，针对字符串的typeof操作符仍然返回'string'，但是如果给Array.isArray()传递字符串，它将
+ * 返回false
+ * 
+ * 可索引的字符串的最大的好处就是简单，用方括号代替了charAt()调用,这样更加简洁、可读并且可能
+ * 更搞笑。不仅如此，字符串的新闻类似于数组的事实是的通用的数组方法可以应用到字符串上。例如：
+ * s = 'JavaScript'
+ * Array.prototype.join.call(s, ' ')
+ * Array.prototype.filter.call(s, function(x){
+ *    return x.match(/[^aeiou]/)
+ * })
+ * 
+ * 请记住，字符串是不可变值，故当把他们作为数组看待时，他们是只读的。如push()、sort()、
+ * reverse()和splice()等数组方法会修改数组，他们在字符串上是无效的。不仅如此，使用数组方法
+ * 来修改字符串会导致错误；出错的时候没有提示。
+ * 
  */
