@@ -299,4 +299,101 @@
  * 实参对象：arguments
  * （即  通过修改 arguments 类数组  可以修改 方法参数的值）
  * 
+ * 如果实参对象是一个普遍数组的话，第二条console.log(x)语句的结果绝对不会是null，在这个例子中，
+ * arguments[0]和x指代同一个值，修改其中一个的值会影响到另一个。
+ * 
+ * 在ECMAScript5中移除了实参对象的这个特殊特性。在严格模式下还有一点（和非严格模式下相比）不同，在非
+ * 严格模式中，函数里的arguments仅仅是一个标识符，在严格模式中，它变成了一个保留字。严格模式中的函数
+ * 无法使用arguments作为形参名或局部变量名，也不能给arguments赋值
+ * 
+ * callee和caller属性
+ * 
+ * 除了数组元素，实参对象还定义了callee和caller属性。在ECMAScript5严格模式中，对这两个属性的读写操作
+ * 都会产生一个类型错误。而在非严格模式下，ECMAScript标准规范规定callee属性指代当前正在执行的函数。
+ * caller是非标准的，但大多数浏览器都实现了这个属性，它指代调用当前正在执行的函数的函数。通过caller属性
+ * 可以访问调用栈。callee属性在某些时候回非常有用，比如在匿名函数中通过callee来递归地调用自身
+ * 
+ * var factorial = function(x){
+ *    if(x <= 1) return 1;
+ *    return x * arguments.callee(x -1)
+ * }
+ * 
+ * ECMAScript 5 严格模式两者都报错
+ * callee 指代当前正在执行的函数
+ * caller 指代当前执行函数的函数 （非标准）
+ * 
+ * 8.3.3 将对象属性用作实参
+ * 
+ * 当一个函数包含超过3个形参时，对于程序员来说，要记住调用函数中实参的正确顺序是在让人头疼。每次调用这个
+ * 函数时都要不厌其烦地查阅文档，为了不让程序员每次都翻阅手册这么麻烦，最好通过名/值对的形式来传入参数，
+ * 这样参数的顺序就无关要紧了。为了实现这种风格的方法调用，定岗以函数的时候，传入的实参都写入一个单独的对象
+ * 之中，在调用的时候传入一个对象，对象中的名/值对是真正需要的实参数据。下面的代码就展示了这种风格的函数
+ * 调用，这种写法允许在函数中设置省略参数的默认值
+ * 
+ * function easyCopy(args){
+ *    arrayCopy(
+ *      args.from, 
+ *      args.from_start || 0,
+ *      args.to,
+ *      args.to_start || 0,
+ *      args.length
+ *    )
+ * }
+ * 
+ * var a = [1, 2, 3, 4], b = []
+ * easyCopy({from:a, to:b, length:4})
+ * 
+ * 8.3.4 实参类型
+ * 
+ * js方法的形参并未声明类型，在形参传入函数体之前也未做任何类型检查。可以采用语义化的单词来给函数实参命名
+ * 或者想刚才的实例代码中的arrayCopy()方法一样给实参补充注释，一次使代码自文档化，对于可选的实参来说，
+ * 可以在注释中补充一下“这个实参是可选的”。当一个方法可以接受任意数量的实参时，可以使用省略号：
+ * 
+ * /function max(/*number... /)/
+ * 
+ * 3.8节已经提到，js在必要的时候回进行类型转换。因此如果函数期望接受一个字符串实参，而调用函数时传入其他
+ * 类型的值，所传入的值会在函数体内将其用做字符串的地方转换为字符串类型。所有的原始类型都可以转换为字符串
+ * 所有的对象都包含toString()方法，所以这种场景下是不会有任何错误的。
+ * 
+ * 然而事情不总是这样的，回头看一下刚才提到的arrayCopy()方法。这个方法期望它的第一实参是一个数组。当传入
+ * 一个 非数组的值作为第一个实参时，尽管看起来没有问题，实际上会出错。触发所写的函数时只用到一两次的‘用
+ * 完即丢’函数，你应当添加类似的实参类型检查逻辑，因为宁愿程序在传入非法值时报错，也不愿非法制导致程序在执行
+ * 时报错，相比而言，逻辑执行是的报错消息不堪清晰且更难处理。
+ * 
+ * function sum(a){
+ *    if(isArrayLike(a)){
+ *      var total = 0;
+ *      for(var i = 0; i < a.length; i++){
+ *        var element = a[i]
+ *        if(element == null) continue;
+ *        if(isFinite(element)) total += element;
+ *        else throw new Error('sum(): elements must be finite numbers')
+ *      }
+ *      return total;
+ *    }
+ *    else throw new Error('sum(): arggument must be array-like')
+ * }
+ * 
+ * js是一种非常灵活的弱类型语言，有时适合编写实参类型和实参个数的不确定性的函数。接下来flexisum()方法
+ * 就是这样。比如，他可以接受任意数量的实参，并可以递归地处理实参是数组的情况，这样的话，它就可以用作不定
+ * 参数函数或者实参是数组的函数。此外，这个方法尽可能的在抛出异常之前将非数组转换为数字
+ * 
+ * function flexisum(a){
+ *    var total = 0
+ *    for(var i = 0; i < arguments.length; i++){
+ *      var element = arguments[i], n;
+ *      if(element == null) continue;
+ *      if(isArray(element))
+ *        n = flexisum.apply(this, element)
+ *      else if(typeof element === 'function')
+ *        n = Number(element())
+ *      else
+ *        n = Number(element)
+ *      if(isNaN(n))
+ *        throw Error('flexisum(): cant convert ' + element + 'to number');
+ *      total += n;
+ *    }
+ *    return total;
+ * }
+ * 
  */
