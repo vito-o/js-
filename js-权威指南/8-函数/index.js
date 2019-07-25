@@ -498,8 +498,57 @@
  * 这种定义匿名函数并立即在单个表达式中调用它的写法非常常见，已经成为一种惯用法了。注意上面代码的圆括号
  * 的用法，function之前的左括号是必须的，因为如果不写这个左括号，js解释器会视图将关键字function解释为
  * 函数声明语句。使用圆括号js解释器才会正确地将其解析为函数定义表达式。使用圆括号是习惯用法，尽管有些时候
- * 没有必要也不应当省略。这里定义的函数会立即调用
+ * 没有必要也不应当省略。这里定义的函数会立即调用.
  * 
+ * var a = [3, 5, 2, 4]
+ * for (var i of a){console.log(i)}  //结果 3, 5, 2, 4 of 中声明的变量i 为  每一项的值
  * 
+ * for (var i in a){console.log(i)}  //结果 0, 1, 2 ,3 in 中声明的遍历i 为  数组的索引
  * 
+ * var a = {aaa: 123}
+ * for (var i of a){console.log(i)}  //结果 TypeError a is not iterable
+ * 
+ * for (var i in a){console.log(i)}  //结果 'aaa'  in 遍历对象的key
+ * 
+ * for in 对于对象和数组来说，作用类似，数组的索引可以看做是 对象的key ，所以产生类似的结果
+ * for of 只能对能遍历的数据类型 进行处理
+ * 
+ */
+/* 
+  var extend = (function(){
+    for(var p in {toString:null}){
+      return function extend(o){
+        for(var i = 1; i < arguments.length; i++){
+          var source = arguments[i]
+          for(var prop in source) o[prop] = source[prop]
+        }
+        return o;
+      }
+    }
+
+    //这个列表列出了需要检查的特殊属性
+    var protoprops = ['toString', 'valueOf', 'constructor', 'hasOwnProperty',
+                      'isPrototypeOf', 'propertyIsEnumerable', 'toLocaleString']
+
+    return function patched_extend(o){
+      for(var i = 1; i < arguments.length; i++){
+        var source = arguments[i]
+        for(var prop in source) o[prop] = source[prop];
+
+        for(var j = 0; j < protoprops.length; j++){
+          prop = protoprops[j]
+          if(source.hasOwnProperty(prop)) o[prop] = source[prop]
+        }
+      }
+      return o;
+    }
+  }())
+*/
+
+
+/**
+ * 8.6 闭包
+ * 
+ * 和其他大多数现代编程语言一样，js也采用词法作用于（lexical scoping）,也就是说，函数的执行依赖于变量
+ * 作用域，这个作用于是在函数定义时决定的，
  */
