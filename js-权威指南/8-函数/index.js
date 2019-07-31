@@ -942,6 +942,161 @@
  * var deviations = data.map(function(x){return x-mean})
  * var stddev = Math.sqrt(deviations.map(square).reduce(sum)/(data.length-1))
  * 
+ * var map = Array.prototype.map
+ *     ? function(a, f){return a.map(f)}
+ *     : function(a, f){
+ *          var result = []
+ *          for(var i=0;i<a.length;i++){
+ *            if(i in a) result[i] = f.call(null, a[i], i, a)
+ *          }
+ *          return result;
+ *       }
+ * 
+ * var reduce = Array.prototype.reduce
+ *      ? function(a, f, initial){
+ *          if(arguments.length > 2)
+ *            return a.reduce(f, initial)
+ *          else return a.reduce(f)
+ *        }
+ *      : function(a, f, initial){
+ *          var i = 0, len = a.length, accumulator;
+ * 
+ *          if(arguments.length > 2) accumulator = initial
+ *          else{
+ *            if(len == 0) throw TypeError();
+ *            while(i < len){
+ *              if(i in a){
+ *                accumulator = a[i++]
+ *                break;
+ *              }
+ *              else i++;
+ *            }
+ *            if(i == len) throw TypeError();
+ *          }
+ *  
+ *          while(i < len){
+ *            if(i in a){
+ *              accumulator = f.call(null, accumulator, a[i], i, a)
+ *            }
+ *          }
+ *          return accumulator;
+ *        }
+ * 
+ * 8.8.2 高阶函数
+ * 
+ * 所谓高阶函数（higher-order function）就是操作函数的函数，它接受一个或多个函数作为参数，并返回一个新
+ * 函数，
+ * 
+ * function not(f){
+ *    return function(){
+ *      var result = f.apply(this, arguments)
+ *      return !result;
+ *    }
+ * }
+ * 
+ * var even = function(x){
+ *    return x % 2 = 0
+ * }
+ * 
+ * var odd = not(even)
+ * [1,1,3,5,5].every(odd)
+ * 
+ * 
  */
 
+/* 
+function not(f){
+      return function(){
+        var result = f.apply(this, arguments)
+        return !result;
+      }
+   }
+   
+   var even = function(x){
+      return x % 2 === 0
+   }
+   
+  var odd = not(even)
+  console.log(odd);
+  console.log([1, 1, 3, 5, 5].every(odd)) 
+*/
+/* 
+function mapper(f){
+  return function(a){return map(a, f)}
+}
 
+var increment = function(x){return x + 1}
+var incrementer = mapper(increment)
+incrementer([1,2,3])
+*/
+/* 
+function compose(f, g){
+  return function(){
+    return f.call(this, g.apply(this, arguments))
+  }
+}
+
+var square = function(x){return x*x}
+var sum = function(x, y){return x + y}
+var squareofsum = compose(square, sum)
+squareofsum(2, 3)
+*/
+
+/**
+ * 8.8.3 不完全函数
+ * 
+ * 函数f()的bind()方法返回一个新函数，给新函数传入特定的上下文和一组指定的参数，然后调用函数f()。我们说
+ * 它把函数“绑定至”对象并传入一部分参数。bind()方法只是将实参放在（完整实参列表的）左侧，也就是说传入bind()
+ * 的实参都是放在传入原始函数的实参列表开始的位置，但有时我们期望将传入bind()的实参放在（完整实参列表的）右侧：
+ * 
+ * //实现一个工具函数将类数组对象（或对象）转换为真正的数组
+ * function array(a, n){retrun Array.prototype.slice.call(a, n || 0)}
+ * 
+ * //这个函数的实参传递至左侧
+ * function partialLeft(f){
+ *    var args = arguments;
+ *    return function(){
+ *      var a = array(args, 1)
+ *      a = a.concat(array(arguments))
+ *      return f.apply(this, a)
+ *    }
+ * }
+ * 
+ * //这个函数的实参传递至右侧
+ * function partialRight(f){
+ *    var args = arguments;
+ *    return function(){
+ *      var a = array(arguments)
+ *      a = a.concat(array(args, 1))
+ *      return f.apply(this, a)
+ *    }
+ * }
+ * 
+ * //这个函数的实参被用作模板
+ * function partial(f){
+ *    var args = arguments;
+ *    return function(){
+ *      var a = array(args, 1)
+ *      var i = 0, j = 0;
+ *      for(;i < a.length; i++)
+ *        if(a[i] === undefined) a[i] = arguments[j++]
+ *      //现在将剩下的内部实参都追加进去
+ *      a = a.concat(array(arguments, j))
+ *      return f.apply(this, a)
+ *    }
+ * }
+ * 
+ * var f = function(x, y, z){return x * (y - z)}
+ * partialLeft(f, 2)(3, 4)      // 2 * (3 - 4)
+ * partialRight(f, 2)(3, 4)     // 3 * (4 - 2)
+ * partial(f, undefined, 2)(3, 4) // 3 * (2 - 4)
+ * 
+ * 利用这种不完全函数的编程技巧，可以编写一些有意思的代码，利用已有的函数来定义新的函数
+ * 
+ * var increment = partialLeft(sum, 1)
+ * var cuberoot = partialRight(Math.pow, 1/3)
+ * String.prototype.first = partial(String,prototype.charAt, 0);
+ * String.prototype.last = partial(String.prototype.substr, -1, 1)
+ * 
+ * 
+ */
