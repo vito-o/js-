@@ -1098,5 +1098,156 @@ squareofsum(2, 3)
  * String.prototype.first = partial(String,prototype.charAt, 0);
  * String.prototype.last = partial(String.prototype.substr, -1, 1)
  * 
+ * 当将不完全调用和其他高阶函数整合在一起的时候，事情就变得格外有趣了。
+ * 
+ * function array(a, n){return Array.prototype.slice.call(a, n || 0)}
+ * 
+ * function partialLeft(f){
+ *    var args = arguments;
+ *    return function(){
+ *      var a = array(args, 1)
+ *      a = a.concat(array(arguments))
+ *      return f.apply(this, a)
+ *    }
+ * }
+ * 
+ * function compose(f, g){
+ *   return function(){
+ *     return f.call(this, g.apply(this, arguments))
+ *   }
+ * }
+ * 
+ * var not = partialLeft(compose, function(x){return !x})
+ * var even = function(x){return x % 2 === 0}
+ * var odd = not(even)
+ * var isNumber = not(isNaN)
  * 
  */
+
+function array(a, n){ return Array.prototype.slice.call(a, n || 0)}
+
+function partialLeft(f){
+  var args = arguments;
+  return function(){
+    var a = array(args, 1)          //截取数组中的第1个返回
+    a = a.concat(array(arguments))  //数组合并
+    return f.apply(this, a)         //compose(f1, f2)
+  }
+}
+
+function compose(f, g){
+  return function(){
+    return f.call(this, g.apply(this, arguments))
+  }
+}
+
+var not = partialLeft(compose, function(x){return !x})
+
+var even = function(x){return x % 2 === 0}
+
+var odd = not(even)
+
+//---------------------------------------------------------------
+
+/**
+ * 我们也可以使用不完全调用的组合在重新组织求平均数和标准差的代码，这种编码风格是非常纯粹的函数式编程
+ * 
+ * var data = [1, 1, 3, 5, 5]
+ * var sum = function(x, y){return x + y}
+ * var product = function(x, y){return x * y}
+ * var neg = partial(product, -1)
+ * var square = partial(Math.pow, nudefined, 2)
+ * var sqrt = partial(Math.pow, undefined, .5)
+ * var reciprocal = partial(Math.pow, undefined, -1)
+ * 
+ * var mean = product(reduce(data, sum), reciprocal(data.length))
+ * 
+ * var stddev = sqrt(product(reduce(map(data, 
+ *                                      compose(square, 
+ *                                              partial(sum, neg(mean)))),
+ *                                  sum),
+ *                           reciprocal(sum(data.length, -1))))
+ * 
+ */
+
+var map = Array.prototype.map
+  ? function(a, f){return a.map(f)}
+  : function(a, f){
+      var result = []
+      for(var i=0;i<a.length;i++){
+        if(i in a) result[i] = f.call(null, a[i], i, a)
+      }
+      return result;
+    }
+
+var reduce = Array.prototype.reduce
+  ? function(a, f, initial){
+      if(arguments.length > 2)
+        return a.reduce(f, initial)
+      else return a.reduce(f)
+    }
+  : function(a, f, initial){
+      var i = 0, len = a.length, accumulator;
+
+      if(arguments.length > 2) accumulator = initial
+      else{
+        if(len == 0) throw TypeError();
+        while(i < len){
+          if(i in a){
+            accumulator = a[i++]
+            break;
+          }
+          else i++;
+        }
+        if(i == len) throw TypeError();
+      }
+
+      while(i < len){
+        if(i in a){
+          accumulator = f.call(null, accumulator, a[i], i, a)
+        }
+      }
+      return accumulator;
+    }
+
+function partial(f){
+  var args = arguments;
+  return function(){
+    var a = array(args, 1)
+    var i = 0, j = 0;
+    for(;i < a.length; i++)
+      if(a[i] === undefined) a[i] = arguments[j++]
+    a = a.concat(array(arguments, j))
+    return f.apply(this, a)
+  }
+}
+
+//Math.pow  Math.pow(2, 3)    --> 8
+var data = [1, 1, 3, 5, 5]
+var sum = function(x, y){return x + y}
+var product = function(x, y){return x * y}
+var neg = partial(product, -1)
+var square = partial(Math.pow, undefined, 2)
+var sqrt = partial(Math.pow, undefined, .5)
+var reciprocal = partial(Math.pow, undefined, -1)
+
+var mean = product(reduce(data, sum), reciprocal(data.length))    //15 * Math.pow(5, -1) = 15 * 0.2 = 3   注：15 *  1/5
+
+var stddev =  sqrt(
+                product(
+                  reduce(
+                    map(
+                      data, 
+                      compose(
+                        square, 
+                        partial(sum, 
+                          neg(mean)
+                        )
+                      )
+                    ),
+                    sum
+                  ),
+                  reciprocal(sum(data.length, -1))
+                )
+              )
+
