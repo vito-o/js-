@@ -1210,6 +1210,12 @@ var reduce = Array.prototype.reduce
       return accumulator;
     }
 
+function compose(f, g){
+  return function(){
+    return f.call(this, g.apply(this, arguments))
+  }
+}
+
 function partial(f){
   var args = arguments;
   return function(){
@@ -1226,28 +1232,83 @@ function partial(f){
 var data = [1, 1, 3, 5, 5]
 var sum = function(x, y){return x + y}
 var product = function(x, y){return x * y}
-var neg = partial(product, -1)
+var neg = partial(product, -1)                // =>  -1 * 3
 var square = partial(Math.pow, undefined, 2)
 var sqrt = partial(Math.pow, undefined, .5)
 var reciprocal = partial(Math.pow, undefined, -1)
 
+//求平均值
 var mean = product(reduce(data, sum), reciprocal(data.length))    //15 * Math.pow(5, -1) = 15 * 0.2 = 3   注：15 *  1/5
 
-var stddev =  sqrt(
-                product(
-                  reduce(
-                    map(
-                      data, 
-                      compose(
-                        square, 
-                        partial(sum, 
-                          neg(mean)
+var stddev =  sqrt(                  //平方根下 -- map结果相加 * 1/4
+                product(             //map结果相加 * 1/4
+                  reduce(            //map结果相加
+                    map(             //[(-3+1)^2,(-3+1)^2,(-3+3)^2,(-3+5)^2,(-3+5)^2]
+                      data,          //[1, 1, 3, 5, 5]
+                      compose(       //Math.pow.call(this, sum(-3, y).apply(this, arguments), 2)
+                        square,      //Math.pow(undefined, 2)
+                        partial(sum, //sum(-3, y)
+                          neg(mean)  //x * y = -1 * 3 = -3
                         )
                       )
                     ),
                     sum
                   ),
-                  reciprocal(sum(data.length, -1))
+                  reciprocal(sum(data.length, -1))// Math.pow(4, -1) == 4^-1 == 1/4;
                 )
               )
 
+/**
+ * 8.8.4 记忆
+ * 
+ * 在8.4.1节中定义了一个阶乘函数，塔科技将上次的计算结果缓存起来。在函数时编程当中，这种缓存技巧叫做“记忆”。
+ * 下面的代码展示了一个高阶函数memorize()接受一个函数作为实参，并返回带有记忆能力的函数。
+ * 
+ * function memorize(f){
+ *    var cache = {}
+ *    return function(){
+ *      var key = arguments.length + Array.prototype.join.call(arguments, ',')
+ *      if(key in cache) return cache[key]
+ *      else return cache[key] = f.apply(this, arguments)
+ *    }
+ * }
+ * 
+ * memorize()函数创建一个新的对象，这个对象呗当做缓存（的宿主）并复制给一个局部变量，因此对于返回的函数来说
+ * 它是私有的（在闭包中）。所返回的函数将它的实参数组转换成字符串，并将字符串用做缓存对象的属性名。如果在缓存中
+ * 存在这个变量，则直接返回它。
+ * 否则，就调用既定的函数对实参进行计算，将计算结果缓存起来并返回，下面的代码展示了如何使用memorize()
+ * 
+ */
+
+function memorize(f){
+  var cache = {}
+  return function(){
+    var key = arguments.length + Array.prototype.join.call(arguments, ',')
+    if(key in cache) return cache[key]
+    else return cache[key] = f.apply(this, arguments)
+  }
+}
+/* 
+function test1(a){return a}
+var m1 = memorize(test1)
+m1(1,2,3,4)
+
+//返回两个整数的最大公约数
+//使用欧几里得算法：
+function gcd(a, b){
+  var t;
+  if(a , b) t = b, b = a, a = t;
+  while(b != 0) t = b, b = a%b, a = t;
+  return a;
+}
+
+var gcdmemo = memorize(gcd)
+gcdmemo(85, 187) // => 17
+
+*/
+
+var factorial = memorize(function(n){
+  return (n <= 1) ? 1 : n * factorial(n - 1)
+})
+
+factorial(5)
