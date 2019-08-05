@@ -377,8 +377,100 @@ console.log(r) */
  * 
  * 9.5.1 instanceof运算符
  * 
- * 4.9.4
+ * 4.9.4节已经讨论过instanceof运算符。左操作数是待检测其类的对象，右操作数是定义类的构造函数。如果o继承自c.prototype
+ * 则表达式o instanceof c值为true。这里的继承可以不是直接继承，如果o所继承的对象继承自另一个对象，后一个对象继承
+ * 自c.prototype，这个表达式的运算结果也是true。
+ * 
+ * 正如在本章前面所讲到的，构造函数是类的公共标识，但原型是唯一的标识。尽管instanceof运算符的右操作数是构造函数，
+ * 但计算过程实际上检测了对象的继承关系，而不是检测创建对象的构造函数。
+ * 
+ * 如果你想检测对象的原型链上是否在某个特定的原型对象，有没有不使用构造函数作为中介的方法呢？答案是肯定的，可以使用
+ * isPrototypeOf()方法。比如，可以通过如下代码来检测对象r是否是例9-1中定义的范围类的成员：
+ * range.methods.isPrototypeOf(r)   //range.method 是原型对象
+ * 
+ * var o = {aa:123}
+ * var b = Object.create(o)
+ * 
+ * o.isPrototypeOf(b)
+ * 
+ * instanceof 运算符和isPrototypeOf()方法的缺点是，我们无法通过对象来获得类名，只能检测对象是否属于指定的类名。
+ * 在客户端js中还有一个比较严重的不足，就是在多窗口和多框架子页面的web应用中兼容性不佳。每个窗口和框架子页面都具有
+ * 单独的执行上下文，每个上下文都包含独有的全景变量和一组构造函数。在两个不同框架页面中创建的两个数组继承自两个相同
+ * 但互相独立的原型对象，其中一个框架页面中的数组不是另一个框架页面的Array()构造函数的实例，instanceof运算结果是
+ * false。
+ * 
+ * 9.5.2 constructor属性
+ * 
+ * 另一种识别对象是否属于某个类的方法是使用constructor属性。因为构造函数是类的公共标识，所以最直接的方法就是使用
+ * constructor属性，比如：
+ * 
+ * function typeAndValue(x){
+ *    if(x == null) return "";
+ *    switch(x.constructor){
+ *      case Number: return "Number: " + x;
+ *      case String: return "String: " + x;
+ *      case Date: return "Date: " + x;
+ *      case RegExp: return "RegExp: " + x;
+ *      case Complex: return "Complex: " + x;
+ *    }
+ * }
+ * 
+ * var i = 10;
+ * 
+ * i.constructor === Number;   //true
+ * 
+ * 需要注意的是，在代码的关键字case后的表达式都是函数，如果改用typeof运算符或获取对象的class属性的话，他么应当为
+ * 字符串。
+ * 
+ * 使用constructor属性检测对象属于某个类的技术的不足之处和instanceof一样。在多个执行上下文的场景中它是无法正常
+ * 工作的（比如在浏览器窗口的多讴歌框架子页面中）。在这种情况下，每个框架页面个自拥有独立的构造函数，一个框架页面
+ * 中的Array构造函数和另一个框架页面的Array构造函数不是同一个构造函数。
+ * 
+ * 同样，在js中也并非所有的对象都包含constructor属性。在每个新创建的函数原型上默认会有constructor属性，但我们常常
+ * 会忽略原型上的constructor属性。比如本章前面的实例代码中所定义的两个类，他们的实例都没有constructor属性。
+ * 
+ * 9.5.3构造函数的名称
+ * 
+ * 使用instanceof运算符和constructor属性来检测对象所属的类有一个主要的问题，在多个执行上下文中存在构造函数的多个
+ * 副本的时候，这两个方法检测结果会出错。多个执行上下文中的函数看起来一模一样，但他们是相互独立的对象，因此彼此也
+ * 不相等。
+ * 
+ * 一种可能的解决方案是使用构造函数的名字而不是构造函数本身作为类标识符。一个窗口里的Array构造函数和另一个窗口的
+ * Array构造函数是不相等的，但是他们的名字是一样的。在一些js的实例中为函数对象提供了一个非标准的属性name，用来表示
+ * 函数的名字。对于那些没有name属性的js实现来说，可以将函数转换为字符串，然后从中提取出函数名。
  * 
  * 
+ * 
+ * function type(o){
+ *    var t, c, n;
+ * 
+ *    if(o === null) return 'null'
+ * 
+ *    if(o !== o) return 'nan'
+ * 
+ *    if((t = typeof o) !== 'object') return t;
+ * 
+ *    if((c = classof(o)) !== 'Object) return c;
+ * 
+ *    if(o.constructor && typeof o.constructor === 'function' && (n = o.constructor.getName())) return n;
+ * 
+ *    return 'Object'
+ * }
+ * 
+ * function classof(o){
+ *    return  Object.prototype.toString.call(o).slice(8, -1)
+ * }
+ * 
+ * Function.prototype.getName = function(){
+ *    if('name' in this) return this.name;
+ *    return this.name = this.toString().match(/function\s*([^(]*)\(/)[1]
+ * }
+ * 
+ * 这种是用构造函数名字来识别对象的类的做法和使用constructor属性一样有一个问题：并不是所有的对象都具有constructor
+ * 属性。此外，并不是所有的函数都有名字。如果使用不带名字的函数定义表达式定义一个构造函数，getName()方法则会返回空
+ * 字符串：
+ * var Complex = function(x, y){thihs.r = x; this.i = y}
+ * 
+ * var Range = function Range(f, t){this.from = f; this.to = t}
  * 
  */       
