@@ -321,5 +321,64 @@ console.log(r) */
  * 
  * 9.4 类的扩充
  * 
+ * js中基于原型的继承机制是动态的：对象从其原型继承属性，如果创建对象之后原型的属性发送了改变，也会影响到继承这个
+ * 原型的所有实例对象。这以为着我们可以通过给原型对象添加新方法来扩充js类。这里我们给9-3中的Complex类添加方法来
+ * 计算复数的共轭复数
+ * 
+ * //返回当前复数的共轭复数
+ * Complex.prototype.conj = function(){return new Complex(this.r - this.i)}
+ * 
+ * js内置类的原型对象也是一样如此‘开放’，也就是说给数字、字符串、数组、函数等数据类型添加方法。在例8-5中我们曾给
+ * ECMAScript3中的函数添加了bind()方法，这个方法原来是没有的：
+ * 
+ * if(!Function.prototype.bind){
+ *    Function.prototype.bind = function(o){
+ *      //bind()方法的代码。。。
+ *    }
+ * }
+ * 
+ * 这里有一些其他的例子
+ * 
+ * var n = 3;
+ * n.times(function(n){console.log(n + ' hello')})
+ * Number.prototype.times = function(f, context){
+ *    var n = Number(this)
+ *    for(var i = 0; i < n; i++) f.call(context, i)
+ * }
+ * 
+ * String.prototype.trime = String.prototype.trim || function(){
+ *    if(!this) return this;
+ *    return this.replace(/^\s+|S+$/g, "")
+ * }
+ * 
+ * Function.prototype.getName = function(){
+ *    return this.name || this.toString().match(/function\s*([^()*]\(/)[1])
+ * }
+ * 
+ * 可以给Object.prototype添加方法，从而使所有的对象都可以调用这些方法。但这种做法并不推荐，因为在ECMAScript5
+ * 之前，无法将这些新增的方法设置为不可枚举的，如果给Object.prototype添加属性，这些属性是可以被for/in循环遍历
+ * 到的。在9.7.1节中会给出ECMAScript5中的例子，使其中使用Object.defineProperty()方法可以安全地扩充Object.
+ * prototype。
+ * 
+ * 然而并不是所有的宿主环境（比如web浏览器）都可以使用Object.defineProperty(),这跟ECMAScript的具体实现有关。
+ * 比如，在很多web浏览器中，可以给HTMLElement.prototype添加方法，这样当前文档中标识HTML标记的所有对象就可以继承
+ * 这些方法。但当前版本的IE则不支持这样做。这对客户端编程使用技术有着严重的限制。
+ * 
+ * 
+ * 9.5 类和类型
+ * 
+ * 回想一下第三章的内容，js定义了少量的数据类型：null、undefined、布尔值、数字、字符串、函数和对象。typeof运算符
+ * 可以得出值得类型。然而，我们往往更希望将类作为类型来对待，这样就可以根据对象所述的类来区分它们。js语言核心中的
+ * 内置对象（通常是指客户端js的宿主对象）可以更具它们的class来区分彼此，比如在6-4中用到了classof()函数。但当我们
+ * 使用本章所提到的技术来定义类的话，实例对象的class属性都是‘Object’，这时classof()函数也无用武之地。
+ * 
+ * 接下来的几节介绍了3中用以检测任意对象的类的技术：instanceof运算符,constructor属性，以及构造函数的名字。但每种
+ * 技术都不完美，本节总结讨论了鸭式辩型，这种编程哲学更加关注对象可以完成什么工作（它包含什么方法）而不是对象属于哪个类
+ * 
+ * 9.5.1 instanceof运算符
+ * 
+ * 4.9.4
+ * 
+ * 
  * 
  */       
