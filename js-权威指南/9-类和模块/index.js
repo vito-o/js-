@@ -559,5 +559,143 @@ console.log(r) */
  * 
  * 9.6 js中的面向对象技术
  * 
+ * 到目前为止，我们讨论了js中类的基础知识：原型对象的重要性、它和构造函数之间的联系、instanceof运算符如何工作等。
+ * 本节将目光转向一些实际的例子（尽管这不是基础知识），包括如何利用js中的类进行编程。
+ * 
+ * 9.6.1 一个例子：集合类
+ * 
+ * 集合（set）是一种数据结构，用以表示非重复值的无序集合。集合的基础方法包括添加值、检测值是否在集合中，这种集合
+ * 需要一种通用的实现，以保证效率。js的对象是属性名以及与之对应的值得基本集合。因此将对象只用作字符串的集合是大材
+ * 小用。例9-6用js实现了一个更加通用的Set类，它实现了从js值到唯一字符串的映射，然后将字符串用作属性名。对象和函数
+ * 都不具备如此简明可靠的唯一字符串标识。
  * 
  */       
+
+function Set(){
+  this.values = {}
+  this.n = 0
+  this.add.apply(this, arguments)
+}
+
+Set.prototype.add = function(){
+  for(var i = 0; i < arguments.length; i++){
+    var val = arguments[i]
+    var str = Set._v2s(val)
+    if(!this.values.hasOwnProperty(str)){
+      this.values[str] = val;
+      this.n++;
+    }
+  }
+  return this;    //支持链式方法调用
+}
+
+Set.prototype.remove = function(){
+  for(var i = 0; i < arguments.length; i++){
+    var str = Set._v2s(arguments[i])
+    if(this.values.hasOwnProperty(str)){
+      delete this.values[str];
+      this.n--;
+    }
+  }
+  return this;
+}
+
+Set.prototype.contains = function(value){
+  return this.values.hasOwnProperty(Set._v2s(value))
+}
+
+Set.prototype.size = function(){
+  return this.n;
+}
+
+Set.prototype.foreach = function(f, context){
+  for(var s in this.values){
+    if(this.values.hasOwnProperty(s))
+    f.call(context, this.values[s])
+  }
+}
+
+Set._v2s = function(val){
+  switch(val){
+    case undefined:     return 'u';
+    case null:          return 'n';
+    case true:          return 't';
+    case false:         return 'f';
+    default:switch(typeof val){
+      case 'number':  return '#' + val;
+      case 'string':  return '"' + val;
+      default: return '@' + objectId(val)
+    }
+
+    function objectId(o){
+      var prop = '|**objectid**|'
+      if(!o.hasOwnProperty(prop))
+        o[prop] = Set._v2s.next++;
+      return o[prop]
+    }
+
+  }
+}
+
+Set._v2s.next = 100;
+
+
+/**
+ * 9.6.2 一个例子：枚举类型
+ * 
+ * 枚举类型（enumerated type）是一种类型，它是值得有限集合，如果定义为这个类型则该值是可
+ * 列出（或“可枚举”）的。在C及其拍摄语言中，枚举类是通过关键字enum声明的。Enum是ECMAScript5
+ * 中的保留字（还未使用），很有可能在将来js就会内置支持枚举类型。到那时，例9-7展示了如何在
+ * js中定义枚举类型的数据。需要注意的是，这里用到了例6-1中的inherit()函数。
+ * 
+ * 例9-7包含一个单独函数enumeration()。但他不是构造函数，它并没有定义一个名叫“enumeration”
+ * 的类。相反，他是一个工厂方法，每次调用它都会创建并返回一个新的类型，比如：
+ * 
+ * var Coin = enumeration({Penny:1, Nickel:5, Dime:10, Quarter:25})
+ * var c = Coin.Dime;
+ * c instanceof Coin
+ * c.constructor = Coin
+ * Coin.Quarter + 3*Coin.Nickel
+ * Coin.Dime == 10
+ * Coin.Dime > Coin.Nickel
+ * String(Coin.Dime) + ":" + Coin.Dime
+ * 
+ * 
+ */
+
+function inherit(o){
+  if(Object.create)
+    return Object.create(o)
+  
+  function f(){}
+  f.prototype = o
+  return new f();
+}
+
+function enumeration(namesToValues){
+  var enumeration = function(){throw "Can't Instantiate Enumerations"}
+
+  var proto = enumeration.prototype = {
+    constructor:enumeration,
+    toString:function(){return this.name},
+    valueOf:function(){return this.value},
+    toJSON:function(){return this.name}
+  }
+
+  enumeration.values = []
+
+  for(name in namesToValues){
+    var e = inherit(proto)
+    e.name = name;
+    e.value = namesToValues[name]
+    enumeration[name] = e;
+    enumeration.values.push(e)
+  }
+
+  enumeration.foreach = function(f, c){
+    for(var i = 0; i < this.values.length; i++) f.call(c, this.values[i])
+  }
+  return enumeration;
+}
+
+var Coin = enumeration({Penny:1, Nickel:5, Dime:10, Quarter:25})
