@@ -699,3 +699,106 @@ function enumeration(namesToValues){
 }
 
 var Coin = enumeration({Penny:1, Nickel:5, Dime:10, Quarter:25})
+
+//使用枚举类型来表示一副扑克牌
+
+function Card(suit, rank){
+  this.suit = suit;     //花色
+  this.rank = rank;     //点数
+}
+
+Card.Suit = enumeration({Clubs:1, Diamonds:2, Hearts:3, Spades:4})
+Card.Rank = enumeration({
+  Two:2, Three:3, Four:4, Five:5, Six:6,
+  Seven:7, Eight:8, Nine:9, Ten:10,
+  Jack:11, Queen:12, King:13, Ace:14
+})
+
+//定义用以描述牌面的文本
+Card.prototype.toString = function(){
+  return this.rank.toString() + ' of ' + this.suit.toString();
+}
+
+//比较扑克牌中两张牌的大小
+Card.prototype.compareTo = function(that){
+  if(this.rank < that.rank) return -1;
+  if(this.rank > that.rank) return 1;
+  return 0;
+}
+
+//以扑克牌的玩法规则对牌进行排序的函数
+Card.orderByRank = function(a, b){return a.compareTo(b)}
+
+//以桥牌的玩法规则对扑克牌进行排序的函数
+Card.orderBySuit = function(a, b){
+  if(a.suit < b.suit) return -1;
+  if(a.suit > b.suit) return 1;
+  if(a.rank < b.rank) return -1;
+  if(a.rank > b.rank) return 1;
+  return 0;
+}
+
+//第一一副标准的扑克牌
+function Deck(){
+  var cards = this.cards = []
+  Card.Suit.foreach(function(s){
+    Card.Rank.foreach(function(r){
+      cards.push(new Card(s, r))
+    })
+  })
+}
+
+//洗牌的方法：重新洗牌并返回洗好的牌
+Deck.prototype.shuffle = function(){
+  var deck = this.cards, len = deck.length;
+  for(var i = len - 1; i > 0; i--){
+    var r = Math.floor(Math.random() * (i + 1)), temp;
+    temp = deck[i],
+    deck[i] = deck[r];
+    deck[r] = temp;
+  }
+  return this;
+}
+
+//发牌
+Deck.prototype.deal = function(n){
+  if(this.cards.length < n) throw 'Out of cards';
+  return this.cards.splice(this.cards.length - n, n);
+}
+
+var deck = (new Deck()).shuffle()
+var hand = deck.deal(13).sort(Card.orderBySuit)
+
+/**
+ * 9.6.3 标准转换方法
+ * 
+ * 3.8.3和6.10节讨论了对象类型转换所用到的重要方法，有一些方法是在需要所类型转换时由js解释
+ * 器自动调用的。不需要为定义的每个类都实现这些方法，但这些方法都非常重要，如果没有为自定义
+ * 的类实现这些方法，也应当是有意为之，而不应当因为疏忽而漏掉了他们。
+ * 
+ * 最重要的方法首先当toString()。这个方法的作用是返回一个可以表示一个对象的字符串，在希望
+ * 使用字符串的地方用到对象的话（比如将对象用作属性名或使用“+”运算符来进行字符串连接运算），
+ * js会自动调用这个方法。如果没有实现这个方法，类会默认从Object.prototype中继承toString()
+ * 方法，这个方法的运算结果是“[object Object]”，这个字符串用处不大，toString()方法应当返回
+ * 一个可读的字符串，这样最终用户才能将这个输出值利用起来，然而有时候并不一定非要如此，不管
+ * 怎样，可以返回可读字符串的toString()方法也会让程序调试变得更加轻松。例9-7中的枚举类型也
+ * 定义了toString()。下面我们会给例9-6中的Set类也定义toString()方法。
+ * 
+ * toLocaleString()和toString()极为类似：toLocaleString()是以贝蒂敏感性(locale-sensitive)
+ * 的方式来讲对象转换为字符串。默认情况下，对象所继承的toLocaleString()方法只是简单地调用
+ * toString()方法。有一些内置类型包含有用的toLocaleString()方法用以实际上返回本地化相关的
+ * 字符串。如果需要为对象到字符串的转换定义toString()方法，那么同样需要定义toLocaleString()
+ * 方法用以处理本地化的对象到字符串的转换。下面的Set类的定义中会有相关代码。
+ * 
+ * 第三个方法是valueOf(),它用来将对象转换为原始值。比如，当数学运算符（除了“+”运算符）和关系
+ * 运算符作用于数字文本标识的对象时，会自动调用valueOf()方法。大多数对象都没有合适的原始值
+ * 来表示他们，也没有定义这个方法。但在例9-7中的枚举类型的实现则说明valueOf()方法是非常重要的。
+ * 
+ * 第四个方法是toJSON(),这个方法是由JSON.stringify()自动调用的。JSON格式用于序列化良好的数据
+ * 结构，而且可以处理js原始值、数组和纯对象。它和类无关，当对一个对象执行序列化操作时，它会
+ * 忽略对象的原型和构造函数。比如将Range对象或Complex对象作为参数传入JSON.stringify()，将
+ * 会返回诸如{'from':1, 'to', 3}或{'r':1, 'i':-1}这种字符串。如果将这些字符串传入JSON.parse()
+ * 则会得到一个和Range对象和Complex对象具有相同属性的纯对象，但这个对象不会包含从Range和
+ * Complex继承来的方法。
+ * 
+ */
