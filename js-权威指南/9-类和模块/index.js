@@ -801,4 +801,154 @@ var hand = deck.deal(13).sort(Card.orderBySuit)
  * 则会得到一个和Range对象和Complex对象具有相同属性的纯对象，但这个对象不会包含从Range和
  * Complex继承来的方法。
  * 
+ * 这种序列化操作非常适用于诸如Range和Complex这种类，但对于其他一些类则必须自定义toJSON()方法来定制个性化的序列化
+ * 格式。如果一个对象有toJSON()方法，JSON.stringify()并不会对传入的对象做序列化操作，而会调用toJSON()来执行
+ * 序列化操作（序列化的值可能是原始值也可能是对象）。比如Date对象的toJSON()方法可以返回一个表示日期的字符串。
+ * 例9-7中的枚举类型也是如此：他们的toJSON()方法和toString()方法完全一样。如果要模拟一个集合，最接近JSON的表示
+ * 方法就是数组，因此在下面的例子中将定义toJSON()方法用以将集合对象转换为值数组。
+ * 
+ * extend(Set.prototype, {
+ *    toString:function(){
+ *      var s = "{",
+ *          i = 0;
+ *      this.foreach(function(v){s +=((i++>0) ? ", " : "") + v;})
+ *      return s + "}"
+ *    },
+ *    toLocaleString:function(){
+ *      var s = "{",
+ *          i = 0;
+ *      this.foreach(function(v){
+ *        if(i ++ > 0) s += ", ";
+ *        if(v == null) s += v;
+ *        else s += v.toLocaleString()
+ *      })
+ *      return s + "}"
+ *    },
+ *    toArray:function(){
+ *      var a = []
+ *      this.foreach(function(v){a.push(v)})
+ *      return a;
+ *    }
+ * })
+ * 
+ * Set.prototype.toJSON = Set.prototype.toArray;
+ * 
+ * 9.6.4 比较方法
+ * 
+ * js的相等运算符比较对象时，比较的是引用而不是值。也就是说，给定两个对象引用，如果要看他们是否指向同一个对象，
+ * 不是检查这两个对象是否具有相同的属性名和相同的属性值，而是直接比较这两个单独的对象是否相等，或者比较他们的属性。
+ * 如果定义一个类，并且希望比较类的实例，应该定义合适的方法来执行比较操作。
+ * 
+ * java编程语言有很多用于对象比较的方法，将java中的这些方法借用到js中是一个不错的注意。为了能让自定义类的实例具有
+ * 比较功能，定义一个叫equals()实例方法。这个方法只能接受一个实参，如果这个实参和调用此方法的对象相等的话则返回
+ * true。当然，这里所说的“相等”的含义是根据类的上下文来决定的。对于简单的类可以通过简单地比较他们的constructor属性
+ * 来确保两个对象是相同类型，然后比较两个对象实例属性以保证他们的值相等。例9-3中的Complex类就实现了这样的equals()
+ * 方法，我们可以轻易地为Range类也实现类似的方法；
+ * 
+ * Range.prototype.constructor = Range
+ * 
+ * Range.prototype.equals = function(that){
+ *    if(that == null) return false;
+ *    if(that.constructor !== Range) return false;
+ *    return this.from == that.from && this.to == that.to
+ * }
+ * 
+ * Set.prototype.equals = function(that){
+ *    if(this === that) return true;
+ * 
+ *    if(!(that instanceof Set)) return false
+ * 
+ *    if(this.size() != that.size()) return false
+ * 
+ *    try{
+ *      this.foreach(function(v){if(!that.contains(v)) throw false})
+ *      return true;
+ *    }catch(x){
+ *      if(x === false) return false
+ *      throw x
+ *    }
+ * }
+ * 
+ * 按照我们需要的方式比较对象是否相等常常是很有用的。对于某个类来说，往往需要比较一个实例“大于”或者“小于”另外一个示例
+ * 比如，你可能会基于Range对象的下边界来定义实例的大小关系。枚举类型可以根据名字的字母表顺序来定义实例的大小，也可以
+ * 根据它包含的数值（假定它包含的都是数字）。另一方面，Set对象其实无法排序的。
+ * 如果将对象用于js的关系比较运算符，比如‘<’和‘<=’，js会首先调用对象的valueOf()方法，如果这个方法返回一个原始值，
+ * 则直接比较原始值。例9-7中由enumeration()方法所返回的枚举类型包含valueOf()方法，因此可以使用关系运算符对他们
+ * 做有意义的比较。但大多数类并没有valueOf()方法，为了按照现实定义的规则来比较这些类型的对象，可以定义一个名叫
+ * compareTo()的方法(同样，这里遵照java的命名约定)
+ * 
+ * compareTo()方法应当只能接受一个参数，这个方法将这个参数和调用它的对象进行比较。如果this对象小于参数对象，
+ * compareTo()应当返回比0小的值。如果this对象大于参数对象，应当返回比0大的值。如果两个对象相等，应当返回0.这些
+ * 关于返回值的约定非常重要，这样我们可以用下面的表达式替换调用关系比较和相等性运算符：
+ * 
+ * a < b        a.compareTo(b) < 0
+ * 
+ * Range.prototype.compareTo = function(that){
+ *    return this.from - that.from;
+ * }
+ * 
+ * 需要注意的是，这个方法中的减法操作根据两个Range对象的关系正确地返回了小于0、等于0和大于0的值。
+ * 
+ * 上文所提到的equals()方法对其参数执行了类型检查，如果参数类型不符合则返回false。compareTo()方法并没有返回一个
+ * 表示“这两个值不能比较”的值，由于compareTo()没有对参数做任何类型检查，因此如果给compareTo()方法传入错误类型的
+ * 参数，往往会抛出异常。
+ * 
+ * Range.prototype.compareTo = function(that){
+ *    if(!(that instanceof Range))
+ *      throw new Error("Can't compare a Range with " + that)
+ * 
+ *    var diff = this.from - that.from
+ *    if(diff == 0) diff = this.to - that.to
+ *    return diff
+ * }
+ * 
+ * 9.6.5 方法借用
+ * 
+ * js中的方法没有什么特别：无非是一些简单的函数，赋值给了对象的属性，可以通过对象来调用它。一个函数可以赋值给两个
+ * 属性，然后作为两个方法来调用它。比如，我们在Set类中就这样做了，将toArray()方法创建了一个副本，并让它可以和toJSON
+ * 方法一样完成同样的功能。
+ * 
+ * 多个类中的方法可以共用一个单独的函数。比如，Array类通常定义了一些内置方法，如果定义了一个类，它的实例是类数组的
+ * 对象，则可以从Array.prototype中将函数复制至所定义的类的原型对象中。如果以经典的面向对象语言的视角来看js的话，吧
+ * 一个类的方法用到其他的类中的做法也称作“多重继承”。然而，js并不是经典的面向对象语言，我更倾向于将这种方法重用更
+ * 正式地称为“方法借用”。
+ * 
+ * 不仅Array的方法可以借用，还可以自定义泛型方法。例9-9定义了泛型方法toString()和equals()，可以被Range、Complex和
+ * Card这些简单的类使用。如果Range没有定义equals()方法，可以这样借用泛型方法equals()
+ * 
+ * Range.prototype.equals = generic.equals;
+ * 
+ * 注意，generic.equals()只会执行浅比较，因此这个方法并不适用于其实例太复杂的类，他们的实例属性通过其equals()方法
+ * 指代对象。同样需要注意，这个方法包含一些特殊情况的程序逻辑，以处理新增至Set对象中的属性。
+ * 
+ * var generic = {
+ *    toString:function(){
+ *      var s = '[';
+ *      if(this.constructor && this.constructor.name)
+ *        s += this.constructor.name + ': '
+ * 
+ *      var n = 0
+ *      for(var name in this){
+ *        if(!this.hasOwnProperty(name)) continue;
+ *        var value = this[name]
+ *        if(typeof value === 'function') continue;
+ *        if(n++) s += ', '
+ *        s += name + '=' + value
+ *      }
+ *      return s + ']'
+ *    },
+ *    equals:function(that){
+ *      if(that == null) return false;
+ *      if(this.constructor !== that.constructor) return false;
+ *      for(var name in this){
+ *        if(name === '|**objectid**|') continue;
+ *        if(!this.hasOwnProperty(name)) continue;
+ *        if(this[name] !== that[name]) return false
+ *      }
+ *      return true
+ *    }
+ * }
+ * 
+ * 9.9.6 私有状态
+ * 
  */
