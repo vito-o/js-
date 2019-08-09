@@ -951,4 +951,56 @@ var hand = deck.deal(13).sort(Card.orderBySuit)
  * 
  * 9.9.6 私有状态
  * 
+ * 在经典的面向对象编程中，经常需要将对象的某个状态封装或隐藏在对象内，只有通过对象的方法才能访问这些状态，对外
+ * 只暴露一些重要的状态变量可以直接读写。为了实现这个目的，类似java的编程语言允许声明类的“私有”实例字段，这些私有
+ * 实例字段只能被类的实例方法访问，且在类的外部是不可见的。
+ * 
+ * 我们可以通过将变量（或参数）闭包在一个构造函数内来模拟实现私有实例字段，调用构造函数会创建一个实例。为了做到
+ * 这一点，需要在构造函数内部定义一个函数（因此这个函数可以访问构造函数内部的参数和变量），并将这个函数赋值给新
+ * 创建对象的属性。例9-10展示了对Range类的另一种封装，新版本的类的实例包含from()和to()方法用以范围的端点，而不是
+ * 用from和to属性来获取端点。这里的from()和to()方法是定义在每个Range对象上的，比如不是从原型中继承来的。其他的
+ * Range方法还是和之前一样定义在原型中，但获取端点的方法从之前直接从属性读取变成了通过from()和to()方法来读取。
+ * 
+ * function Range(from, to){
+ *    this.from = function(){return from}
+ *    this.to = function(){return to}
+ * }
+ * 
+ * Range.prototype = {
+ *    constructor:Range,
+ *    includes:function(x){return this.from() <= x && x <= this.to()},
+ *    foreach:function(f){
+ *      for(var x = Math.ceil(this.from()), max = this.to(); x <= max; x++) f(x)
+ *    },
+ *    toString:function(){return "(" + this.from() + "..." + this.to() + ")"}
+ * }
+ * 
+ * 这个新的Range类定义了 用以读取范围端点的方法，但没有定义这只端点的方法或属性。这让类的实例看起来是不可修改的。
+ * 如果使用正确的话，一旦创建Range对象，端点数据就不可修改了。除非使用ECMAScript5中的某些特性，但from和to属性
+ * 依然是可写的，并且Range对象实际上并不是真正不可修改的：
+ * 
+ * var r = new Range(1, 5)
+ * r.from = function(){return 0;}
+ * 
+ * 但需要注意的是，这种封装技术造成了更多系统开销。使用闭包来封装类的状态的类一定会比不适用封装的状态变量的等价
+ * 类运行速度更慢，并占用更多内存。
+ * 
+ * 9.6.7 构造函数的重载和工厂方法
+ * 
+ * 有时候，我们希望对象的初始化有多种方式。比如，我们想通过半径和角度（极坐标）来初始化一个Complex对象，而不是
+ * 通过实部和虚部来初始化，或者通过元素组成的数组来初始化一个Set对象，而不是通过传入构造函数的参数来初始化它。
+ * 
+ * 有一个方法可以实现，通过重载(overload)这个构造函数让它根据传入参数的不同来执行不同的初始化方法。下面这段代码
+ * 就是重载Set()构造函数的例子：
+ * 
+ * function Set(){
+ *    this.values = {}
+ *    this.n = 0;
+ * 
+ *    if(arguments.length == 1 && isArrayLike(arguments[0]))
+ *      this.add.apply(this, arguments[0])
+ *    else if(arguments.length > 0)
+ *      this.add.apply(this, arguments)
+ * }
+ * 
  */
