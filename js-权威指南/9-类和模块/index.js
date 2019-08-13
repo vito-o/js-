@@ -1003,4 +1003,37 @@ var hand = deck.deal(13).sort(Card.orderBySuit)
  *      this.add.apply(this, arguments)
  * }
  * 
+ * 这段代码定义的Set()构造函数可以显式将一组元素作为参数列表传入，也可以传入元素组成的数组。但是这个构造函数有多
+ * 意性，如果集合的某个成员是一个数组就无法通过这个构造函数来创建这个集合了
+ * 
+ * 在使用极坐标来初始化复数的例子中，实际上并没有看到有函数重载。代表复数两个维度的数字都是浮点数，除非给构造函数
+ * 传入第三个参数，否则构造函数无法识别到底传入的极坐标参数还是直角坐标参数。相反，可以写一个工厂方法----一个类的
+ * 方法用以返回累的一个实例。下面的例子即是使用工厂方法来返回一个使用极坐标初始化的Complex对象：
+ * 
+ * Complex.polar = function(r, theta){
+ *    return new Complex(r * Math.cos(theta), r * Math.sin(theta))
+ * }
+ * 
+ * //下面这个工厂方法用来通过数组初始化Set对象
+ * Set.fromArray = function(a){
+ *    s = new Set()
+ *    s.add.apply(s, a)
+ *    return s;
+ * }
+ * 
+ * 可以给工厂方法定义任意的名字，不同名字的工厂方法用以执行不同的初始化。但由于构造函数时类的共有标识，因此每个
+ * 类只能有一个构造函数。但这并不是一个“必须遵守”的规则。在js中是可以定义多个构造函数继承自一个原型对象的，如果
+ * 这样做的话，有这些构造函数的任意一个所创建的对象都属于同一类型。并不推荐这种技术，但下面的实例代码使用这种技术
+ * 定义了该类型的一个辅助构造函数：
+ * 
+ * function SetFromArray(a){
+ *    Set.apply(this, a)
+ * }
+ * 
+ * SetFromArray.prototype = Set.prototype
+ * 
+ * var s = new SetFromArray([1,2,3])
+ * 
+ * s.instanceof Set
+ *
  */
