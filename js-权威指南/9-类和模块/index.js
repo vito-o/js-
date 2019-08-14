@@ -1036,4 +1036,99 @@ var hand = deck.deal(13).sort(Card.orderBySuit)
  * 
  * s.instanceof Set
  *
+ * 
+ * 9.7 子类
+ * 
+ * 在面向对象编程中，类B可以继承自另外一个类A。我们将A称为父类（superClass）,将B称为子类（subclass）。B的实例
+ * 从A继承了所有的实例方法。类B可以定义自己的实例方法，有些方法可以重载类A中的同名方法，如果B的方法重载了A中的
+ * 方法，B中的重载方法可能会调用A中的重载方法，这种做法称为“方法链”(method chaining)。同样，子类的构造函数B（）
+ * 有时需要调用父类的构造函数A()，这种做法称为“构造函数链”。子类还可以有子类，当设计类的层次结构时，往往需要定义
+ * 抽象类（abstract class）。抽象类中定义的方法没有实现。抽象类中的抽象方法是在抽象类的具体子类中实现的。
+ * 
+ * 在js中常见子类的关键之处在于，采用合适的方法对原型对象进行初始化。如果类B继承自类A，B。prototype必须是A.prototype
+ * 的后嗣。B的实例继承自B.prototype，后者同样也继承自A.prototype。
+ * 
+ * 9.7.1 定义子类
+ * 
+ * js的对象可以从类的原型对象中继承属性（通常继承的是方法）。如果O是类B的实例，B是A的子类，那么O也一定从A中继承了
+ * 属性。为此，首先要确保B的原型对象继承自A的原型对象。通过inherit()函数，可以这样来实现：
+ * 
+ * B.prototype = inherit(A.prototype)   //子类派生自父类
+ * B.prototype.constructor = B;         //重载继承来的constructor属性
+ * 
+ * 这两行代码是在js中创建子类的关键。如果不这样做，原型对象仅仅是一个普通对象，它只继承自Object.prototype,这意味
+ * 着你的类和所有类一样是Object的子类。如果将这两行代码添加至defineClass()函数中，可以将它变成9-11中的defineSubclass()
+ * 函数和Function.prototype.extend()方法。
+ * 
+ * function defineSubclass(
+ *    superclass,       //父类的构造函数
+ *    constructor,      //新的子类的构造函数
+ *    methods,          //实例方法：复制至原型中
+ *    statics           //类属性：复制至构造函数中
+ * ){
+ *    constructor.prototype = inherit(superclass.prototype)
+ *    constructor.prototype.constructor = constructor;
+ *    if(methods) extend(constructor.prototype, methods)
+ *    if(statics) extend(constructor, statics)
+ *    return constructor;
+ * }
+ * 
+ * //也可以通过父类构造函数的方法来做到这一点
+ * Function.prototype.extend = function(constructor, methods, statics){
+ *    return defineSubclass(this, constructor, methods, statics)
+ * }
+ * 
  */
+
+function inherit(o){
+  if(Object.create)
+    return Object.create(o)
+  function f(){}
+  f.prototype = o;
+  return new f()
+}
+
+var extend = (function(){
+  return function extend(o){
+    for(var i = 1; i < arguments.length; i++){
+      var source = arguments[i]
+      for(var prop in source) o[prop] = source[prop]
+    }
+    return o;
+  }
+}())
+
+function defineSubclass(
+  superclass,
+  constructor,
+  methods,
+  statics
+){
+  //建立子类原型对象
+  constructor.prototype = inherit(superclass.prototype)
+  constructor.prototype.constructor = constructor
+
+  if(methods) extend(constructor.prototype, methods)
+  if(statics) extend(constructor, statics)
+
+  return constructor;
+}
+
+Function.prototype.extend = function(constructor, methods, statics){
+  return defineSubclass(this, constructor, methods, statics)
+}
+
+function SingletonSet(member){
+  this.member = member
+}
+
+SingletonSet.prototype = inherit(Set.prototype)
+
+extend(SingletonSet.prototype, {
+  constructor: SingletonSet,
+  add:function(){throw "read-only set"},
+  remove:function(){throw "read-ony set"},
+  size:function(){return 1},
+  foreach:function(f, context){f.call(context, this.member)},
+  contains:function(x){return x === this.member}
+})
