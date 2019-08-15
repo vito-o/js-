@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <a href="#123">aaaa</a>
+  <a href="#456">bbbb</a>
+  <a href="#789">cccc</a>
+
+  <script>
+    function Router(){
+      this.routes = {}
+      this.currentUrl = '';
+      window.addEventListener('load', ()=> ()=> this.render())
+      window.addEventListener('hashchange', ()=> this.render())
+    }
+
+    Router.init = function(){
+      window.router = new Router();
+    }
+
+    Router.prototype.render = function(){
+      console.log(location)
+      this.currentUrl = location.hash.slice(1) || '/';
+      this.routes[this.currentUrl]()
+    }
+    Router.init()
+  </script>
+</body>
+</html>

@@ -1132,3 +1132,86 @@ extend(SingletonSet.prototype, {
   foreach:function(f, context){f.call(context, this.member)},
   contains:function(x){return x === this.member}
 })
+
+/**
+ * 这里的SingletonSet类是一个比较简单的实现，它包含5个简单的方法定义。它实现了5个核心的Set方法，但从它的父类中
+ * 继承了toString()、toArray()和equals()方法。定义子类就是为了继承这些方法。比如，Set类的equals()、toArray()
+ * 和equals()方法。定义子类就是为了继承这些方法。比如，Set类的equals()方法用来对Set实例进行比较，只要Set的实例
+ * 包含size()和foreach()方法，就可以通过equals()比较。因为SingletonSet是Set的资历，所以他自动继承了equals()
+ * 的实现，不用在实现一次。当然，如果想要最简单的实现方式，那么给SingletonSet类定义它自己的equals()版本会更
+ * 高效一些：
+ */
+
+ SingletonSet.prototype.equals = function(that){
+   return that instanceof Set && that.size() == 1 && that.contains(this.member)
+ }
+
+/**
+ * 需要注意的是，SingletonSet不是将Set中的方法列表静态地借用过来，而是动态地从Set类继承方法。如果给Set.prototype
+ * 添加新的方法，Set和SingletonSet的所有实例就会立即拥有这个方法
+ * 
+ * 
+ * 9.7.2 构造函数和防范链
+ * 
+ * 最后一节的SingletonSet类定义了全新的集合实现，而且将它继承自其父类的核心方法全部替换。然而定义子类时，我们往往
+ * 希望对父类的行为进行修改或扩充，而不是完全替换掉，为了做到这一点，构造函数和子类的方法需要调用或链接到父类构造
+ * 函数和父类方法。
+ * 
+ * 例9-13它定义了Set的子类NonNullSet，它不允许Null和undefined作为它的成员。为了使用这种方式对成员做限制，NonNullSet
+ * 需要将其add()方法中对Null和undefined值做检测。但他需要完全重新实现一个add()方法，因此它调用了父类中的这个方法
+ * 注意，NonNullSet()构造函数同样不需要重新实现，它只须将它的参数传入父类构造函数（作为函数来调用它，而不是通过
+ * 构造函数来调用），通过父类的构造函数来初始化新创建的对象。
+ * 
+ */
+
+function NonNullSet(){
+  Set.apply(this, arguments)
+}
+
+NonNullSet.prototype = inherit(Set.prototype)
+NonNullSet.prototype.constructor = NonNullSet;
+
+NonNullSet.prototype.add = function(){
+  for(var i = 0; i < arguments.length; i++)
+    if(arguments[i] == null)
+      throw new Error("Can't add null or undefined to a NunNullSet")
+  return Set.prototype.add.apply(this, arguments)
+}
+
+/**
+ * 让我们将这个非Null集合的概念推而广之，称为“过滤后的集合”，这个集合中的成员必须首先传入一个过滤函数再执行添加
+ * 操作。为此，定义一个类工厂函数，传入一个过滤函数，返回一个新的Set子类。实际上，可以对此做进一步的通用化的处理，
+ * 定义一个可以接受两个参数的类工厂：子类和用于add()方法的过滤函数。这个工厂方法称为filteredsetSubclass()，并
+ * 通过这样的代码来使用它：
+ */
+
+var StringSet = filteredSetSubclass(Set, function(x){return typeof x === 'string'})
+
+var MySet = filteredSetSubclass(NonNullSet, function(x){return typeof x !== 'function'})
+
+//类工厂和方法链
+function filteredSetSubclass(superclass, filter){
+  var constructor = function(){
+    superclass.apply(this, arguments)
+  }
+  var proto = constructor.prototype = inherit(superclass.prototype)
+  proto.constructor = constructor;
+  proto.add = function(){
+    for(var i = 0; i < arguments.length; i++){
+      var v = arguments[i]
+      if(!filter(v)) throw ('value' + v + ' rejected by filter')
+    }
+    superclass.prototype.add.apply(this, arguments)
+  }
+  return constructor;
+}
+
+/**
+ * 9-14中一个比较有趣的事情时，用一个函数将创建子类的代码包装起来，这样就可以在构造函数和方法链中使用父类的参数，
+ * 而不是通过写死某个父类的名字啊来使用它的参数。也就是说如果想修改父类，只须修改移除即可，而不必对每个用到父类名
+ * 的地方都做修改。如果有重复的留有证明这种技术的可行性，即使不在定义类工厂的场景中，这种技术也是值得提倡使用的。
+ * 比如，
+ * 
+ * 
+ * 
+ */
