@@ -1117,7 +1117,7 @@ function defineSubclass(
 Function.prototype.extend = function(constructor, methods, statics){
   return defineSubclass(this, constructor, methods, statics)
 }
-
+//-----------------------------------------------------------------
 function SingletonSet(member){
   this.member = member
 }
@@ -1137,7 +1137,7 @@ extend(SingletonSet.prototype, {
  * 这里的SingletonSet类是一个比较简单的实现，它包含5个简单的方法定义。它实现了5个核心的Set方法，但从它的父类中
  * 继承了toString()、toArray()和equals()方法。定义子类就是为了继承这些方法。比如，Set类的equals()、toArray()
  * 和equals()方法。定义子类就是为了继承这些方法。比如，Set类的equals()方法用来对Set实例进行比较，只要Set的实例
- * 包含size()和foreach()方法，就可以通过equals()比较。因为SingletonSet是Set的资历，所以他自动继承了equals()
+ * 包含size()和foreach()方法，就可以通过equals()比较。因为SingletonSet是Set的子类，所以他自动继承了equals()
  * 的实现，不用在实现一次。当然，如果想要最简单的实现方式，那么给SingletonSet类定义它自己的equals()版本会更
  * 高效一些：
  */
@@ -1151,7 +1151,7 @@ extend(SingletonSet.prototype, {
  * 添加新的方法，Set和SingletonSet的所有实例就会立即拥有这个方法
  * 
  * 
- * 9.7.2 构造函数和防范链
+ * 9.7.2 构造函数和方法链
  * 
  * 最后一节的SingletonSet类定义了全新的集合实现，而且将它继承自其父类的核心方法全部替换。然而定义子类时，我们往往
  * 希望对父类的行为进行修改或扩充，而不是完全替换掉，为了做到这一点，构造函数和子类的方法需要调用或链接到父类构造
@@ -1208,10 +1208,68 @@ function filteredSetSubclass(superclass, filter){
 
 /**
  * 9-14中一个比较有趣的事情时，用一个函数将创建子类的代码包装起来，这样就可以在构造函数和方法链中使用父类的参数，
- * 而不是通过写死某个父类的名字啊来使用它的参数。也就是说如果想修改父类，只须修改移除即可，而不必对每个用到父类名
- * 的地方都做修改。如果有重复的留有证明这种技术的可行性，即使不在定义类工厂的场景中，这种技术也是值得提倡使用的。
+ * 而不是通过写死某个父类的名字啊来使用它的参数。也就是说如果想修改父类，只须修改一处即可，而不必对每个用到父类名
+ * 的地方都做修改。如果有充足的理由证明这种技术的可行性，即使不在定义类工厂的场景中，这种技术也是值得提倡使用的。
  * 比如，
  * 
+ */
+
+//Function.prototype.extend()
+
+// Function.prototype.extend = function(constructor, methods, statics){
+//    return defineSubclass(this, constructor, methods, statics)
+// }
+
+var NonNullSet = (function(){
+  var superclass = Set;
+  return superclass.extend(
+    function(){ superclass.apply(this, arguments) },
+    {
+      add:function(){
+        for(var i = 0; i < arguments.length; i++){
+          if(arguments[i] == null)
+            throw new Error("Cant' t add null or undefined")
+        }
+        return superclass.prototype.add.apply(this, arguments)
+      }
+    }
+  )
+}())
+
+/**
+ * 最后，值得强调的是，类似这种创建类工厂的能力是js语言动态特征的一个体现，类工厂是一种非常强大和有用的特性，这
+ * 在java和c++等语言中是没有的。
  * 
+ * 9.7.3 组合 vs 子类
+ * 
+ * 在前一节中，定义的集合可以根据特定的标准对集合成员做限制，而且使用了子类的技术来实现这种功能，所创建的自定义子类
+ * 使用了特定的过滤函数来对集合中的成员做限制。父类和过滤函数的每个组合都需要创建一个新的类。
+ * 
+ * 然而还有另一种更好的方法来完成这种需求，即面向对象编程中一条广为人知的设计余额则：“组合优于继承”。这样，可以利用
+ * 组合的原理定义一个新的集合实现，它“包装”了另外一个集合对象，在将受限制的成员过滤之后会用到这个（包装的）集合对象
  * 
  */
+
+ //使用组合代替继承的集合的实现
+
+var FilteredSet = Set.extend(
+  function FilteredSet(set, filter){
+    this.set = set;
+    this.filter = filter;
+  },
+  {
+    add:function(){
+      if(this.filter){
+        for(var i = 0; i < arguments.length; i++){
+          var v = arguments[i]
+          if(!this.filter(v))
+            throw new Error("FilteredSet: value " + v + " rejected by filter")
+        }
+
+        this.set.add.apply(this.set, arguments)
+        return this;
+      }
+    }
+
+  }
+)
