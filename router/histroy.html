@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+  <a href="/123">aaaa</a>
+  <a href="/456">bbbb</a>
+  <a href="/789">cccc</a>
+
+  <div class="content-div" style="margin-top: 20px;"></div>
+
+  <button class="btn">back</button>
+
+  <script>
+    class Router{
+      constructor(path){
+        this.routes = {}
+        history.replaceState({path}, null, path)
+        this.routes[path] && this.routes[path]()
+        window.addEventListener('popstate', e=>{
+          const path = e.state && e.state.path
+          this.routes[path] && this.routes[path]()
+        })
+
+      }
+
+      static init(){
+        window.router = new Router(location.pathname)
+      }
+
+      route(path, cb){
+        this.routes[path] = cb || function(){}
+      }
+
+      go(path){
+        history.pushState({ path }, null, path) 
+        this.routes[path] && this.routes[path]()
+      }
+
+    }
+
+
+    Router.init()
+
+
+    const ContentDom = document.querySelector('.content-div')
+    const changeContent = content => ContentDom.innerHTML = content;
+
+    router.route('/123', ()=>changeContent('默认页面'))
+    router.route('/456', ()=>changeContent('page1页面'))
+    router.route('/789', ()=>changeContent('page2页面'))
+
+    document.querySelectorAll('a').forEach(dom => {
+      dom.addEventListener('click', e =>{
+        e.preventDefault();
+        router.go(e.target.getAttribute('href'))
+      })
+
+    })
+
+  </script>
+</body>
+</html>

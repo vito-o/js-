@@ -1270,6 +1270,55 @@ var FilteredSet = Set.extend(
         return this;
       }
     }
+  }
+)
 
+/**
+ * 这个例子中使用组合的一个好处是，只须创建一个单独的FilteredSet子类即可。可以利用这个类的实例来创建任意带有成员
+ * 限制的集合实例。比如，不用上文中定义的NonNullSet类，可以这样做
+ * 
+ * var s = new FilteredSet(new Set(), function(x){return x !== null})
+ * 
+ * 甚至还可以对已经过滤的集合进行过滤
+ * 
+ * var t = new FilteredSet(s, {function(x){return !(x instanedof Set)}})
+ * 
+ * 9.7.4 类的层次结构和抽象类
+ * 
+ * 在上一节中给出了“组合优于继承”的原则，但为了将这条原则阐述清楚，创建了Set的子类。这样做的原因是最终得到的类是
+ * Set的实例，它会从Set继承有用的辅助方法，比如toString()和equals()尽管这是一个很实际的原因，但不用创建类似set
+ * 类这种具体类的子类也可以很好的用组合来实现“范围”。9-12中的SingletonSet类可以有另外一种类似的实现，这个类还是
+ * 继承自Set，因此它可以继承很多辅助方法，但他的实现和其父类的实现完全不一样。SingletonSet并不是Set类的专用版本
+ * 而是完全不同的另一种Set。在类层次结构中SingletonSet和Set应当是兄弟关系，而非父子关系。
+ * 
+ * 不管是在经典的面向对象编程语言中还是在js中，通行的解决办法是“从实现中抽离出接口”。假定定义了一个AbstractSet类
+ * 其中定义类一些辅助方法比如toString()，但并没有实现诸如foreach()的核心方法。这样，实现的Set、SingletonSet和
+ * FilteredSet都是这个抽象类的子类。
+ * 
+ * 例9-16在这个思路上更进一步，定义了一个层次结构的抽象几何类。AbstractSet只定义了以一个抽象方法：contains()。
+ * 任何类只要“声称”自己是一个表示范围的类，就必须至少定义这个contains()方法。然后，定义AbstractSet的子类
+ * AbstractEnumerableSet。这个类增加了抽象的size()和foreach()方法，而且定义了一些有用的非抽象方法（toString()、
+ * toArray()、equals()等），AbstractEnumerableSet并没有定义add()和remove()方法，它只代表只读集合。SingletonSet
+ * 可以实现为非抽象子类。最后，定义了AbstractEnumerableSet的子类AbstractWritableSet。这个final抽象集合定义了抽象
+ * 方法add()和remove()，并实现了诸如union()和intersection()等费具体方法，值两个方法调用了add()和remove()。
+ * AbstractWritableSet是Set和FilteredSet类想要的父类。但这个例子中并没有实现它，而是实现了一个新的名字叫ArraySet
+ * 的非抽象类。
+ * 
+ */
+
+
+function abstructmethod(){throw new Error('abstract method')}
+
+function AbstractSet(){throw new Error("Can't instantiate abstract classes")}
+AbstractSet.prototype.contains = abstructmethod;
+
+var NotSet = AbstractSet.extend(
+  function NotSet(set){this.set = set},
+  {
+    contains:function(x){return !this.set.contains(x)},
+    toString:function(x){return "~" + this.set.toString()},
+    equals:function(that){
+      return that instanceof NotSet && this.set.equals(that.set)
+    }
   }
 )

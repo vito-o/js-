@@ -11,10 +11,16 @@
   <a href="#456">bbbb</a>
   <a href="#789">cccc</a>
 
+  <div class="content-div" style="margin-top: 20px;"></div>
+
+  <button class="btn">back</button>
+
   <script>
     function Router(){
+      this.isBack = false
       this.routes = {}
       this.currentUrl = '';
+      this.histroyStack = [];
       window.addEventListener('load', ()=> ()=> this.render())
       window.addEventListener('hashchange', ()=> this.render())
     }
@@ -23,12 +29,44 @@
       window.router = new Router();
     }
 
+    Router.prototype.route = function(path, cb){
+      this.routes[path] = cb || function(){}
+    }
+
     Router.prototype.render = function(){
-      console.log(location)
+      if(this.isBack){
+        this.isBack = false
+        return;
+      }
+
       this.currentUrl = location.hash.slice(1) || '/';
       this.routes[this.currentUrl]()
+      this.histroyStack.push(this.currentUrl)
     }
+
+    Router.prototype.back = function(){
+      this.isBack = true;
+      this.histroyStack.pop()
+      let { length } = this.histroyStack;
+      let prev = this.histroyStack[length - 1]
+      location.hash = `#${prev}`
+      this.routes[prev]()
+    }
+
     Router.init()
+
+    const ContentDom = document.querySelector('.content-div')
+    const changeContent = content => ContentDom.innerHTML = content;
+
+    router.route('123', ()=>changeContent('默认页面'))
+    router.route('456', ()=>changeContent('page1页面'))
+    router.route('789', ()=>changeContent('page2页面'))
+
+    var btn = document.querySelector('.btn')
+    btn.addEventListener('click', function(){
+      router.back()
+    })
+
   </script>
 </body>
 </html>
