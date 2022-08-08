@@ -1,0 +1,20 @@
+mocha 在describe 块之中，提供测试用例的四种钩子：
+before() after() beforeEach() afterEach().他们会在指定时间执行
+
+describe('hooks', function(){
+  before(function(){
+    //本区块的所有测试用例之前执行
+  })
+
+  after(function(){
+    //本区块的所有测试用例之后执行
+  })
+
+  beforeEach(function(){
+    //本区块的每个测试用例之前执行
+  })
+
+  afterEach(function(){
+    //本区块的每个测试用例之后执行
+  })
+})

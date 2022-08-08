@@ -1,0 +1,108 @@
+网上现普遍推荐的前端测试框架为：karma + mocha + chai。由于我们使用的是Vue来构建前端项目，还可以使用vue官方的
+测试工具库vue Test Utils。可以大大减少测试代码的编写难度
+
+karma
+karma是测试的驱动，可以通过karma的配置文件集成测试框架，断言库和浏览器。什么意思呢，就是通过karma可以让我们的
+代在不同的浏览器中允许测试，并可以和任意主流的前端测试框架如jasmine、mocha、quint、nodeunit、nunit等集成
+并且可以监听文件的变化，任意源码或者测试文件的变化都会重新运行测试
+mocha是js的测试框架，浏览器和Node端均可使用。但是Mocha本身并不提供断言功能，需要借助例如：chai这样的断言库完成测试的功能
+
+describe('unit', function(){
+  it('example', function(){
+    return true
+  })
+})
+
+//异步代码
+describe('异步测试Callback', function(){
+  it('Done用例', function(done){
+    setTimeout(() => {
+      done()
+    }, 1000)
+  })
+})
+
+//promise
+describe('一步测试promise'， function(){
+  it('Promise用例', function(){
+    return new Promise((resolve, reject) => {
+      resolve(true)
+    })
+  })
+})
+
+//async
+describe('异步测试Async', function(){
+  it('Async用例', async function(){
+    return await Promise.resolve()
+  })
+})
+
+//钩子
+
+before        全部的测试用例之前执行
+after         全部的测试用例结束之后执行
+beforeEach    每一个测试用例前执行
+afterEach     每一个测试用例后执行
+
+describe('MochaHook', function(){
+  before(function(){
+    console.log('before')
+  })
+
+  after(function(){
+    console.log('after')
+  })
+
+  beforeEach(function(){
+    console.log('beforeEach')
+  })
+
+  afterEach(function(){
+    console.log('afterEach')
+  })
+
+  it('example1', function(){
+    console.log(1)
+  })
+
+  it('example2', function(){
+    console.log(2)
+  })
+})
+
+skip
+
+//descirbe,或者it之后添加skip。可以让Mocha忽略测试单元或者测试用例。使用skip，测试会标记为待处理。
+
+//重试测试:设置测试失败后，测试重试的次数
+describe('retries', function(){
+  it('retires', function(){
+    this.retires(3)
+    const number = Math.random()
+    if(number > 0.5) throw New Error()
+    else return true
+  })
+})
+
+//slow：如果测试用例，允许时间超过slow设置的时间，会被标红
+describe('unit', function(){
+  it('example', function(done){
+    this.slow(100)
+    setTimeout(()=>{
+      done()
+    },200)
+  })
+})
+
+//timeout：设置测试用例的最大超时时间，如果指向时间超过了最大超时时间，测试结果将为错误
+describe('unit', function(){
+  it('example', function(done){
+    this.timeout(100)
+    setTimeout(() => {
+      done()
+    }, 200)
+  })
+})
+
+Chai：断言库

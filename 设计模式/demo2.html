@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <button id="execute">执行</button>
+  <button id="undo">执行</button>
+  <script>
+    var tv = {
+      open: function(){
+        console.log('打开电视')
+      },
+      close: function(){
+        console.log('关闭电视')
+      }
+    }
+
+    /* var OpTvCommand = function(receiver){
+      this.receiver = receiver
+    }
+
+    OpTvCommand.prototype.execute = function(){
+      this.receiver.open()
+    }
+    OpTvCommand.prototype.undo = function(){
+      this.receiver.close()
+    }
+
+    var setCommand = function(command){
+      document.getElementById('execute').onclick = function(){
+        command.execute()
+      }
+      document.getElementById('undo').onclick = function(){
+        command.undo()
+      }
+    }
+
+    setCommand(new OpTvCommand(tv)) */
+
+    /* var createCommand = function(receiver){
+      var execute = function(){
+        receiver.open()
+      }
+
+      var undo = function(){
+        receiver.close()
+      }
+
+      return { execute, undo }
+    }
+
+    var setCommand = function(command){
+      document.getElementById('execute').onclick = function(){
+        command.execute()
+      }
+      document.getElementById('undo').onclick = function(){
+        command.undo()
+      }
+    }
+
+    setCommand(createCommand(tv)) */
+
+    Function.prototype.before = function(beforeFn){
+      console.log(this)
+      var _self = this
+      return function(){
+        beforeFn.apply(_self, arguments)
+        return _self.apply(this, arguments)
+      }
+    }
+
+    var func = function(){
+      console.log(2)
+    }
+
+    func = func
+      .before(function(){
+        console.log(1)
+      })
+
+    func()
+
+  </script>
+</body>
+</html>
