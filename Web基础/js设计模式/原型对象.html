@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+<script>
+  const obj = {
+    x: 1,
+    func: () => {}
+  }
+
+  const newObj = Object.create(obj);
+
+
+  function Parent(){
+    this.parentAge = 50;
+  }
+
+  function Child(){}
+
+  Child.prototype = new Parent()
+  Child.prototype.constructor = Child;
+
+  const ch = new Child();
+
+</script>
+</body>
+</html>

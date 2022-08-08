@@ -1,0 +1,64 @@
+15.5以后的版本  propTyps 从 react 抽出来了， 如果你要使用需要自己安装使用
+
+React 的 Fragment  ==  Vue 的 template
+
+react-dom  v14.0从react主包分割出来
+DOM diffing algorithm -DOM拆分算法
+
+
+dangerouslySetInnerHTML   防止XSS攻击  DOM插入元素
+
+
+setState   会导致render 重新调用，一个模板尽量  减少setState  减少开销
+
+
+https://api.github.com/search/repositories?q=javascript&sort=starts
+
+
+
+react 按需加载  <Route paht="user" getComponent={}/>
+
+按需加载
+require ensure
+
+chunkFileName 按需加载名称（好像是）
+
+
+loadable-components
+
+routerWillLeave
+
+react-router-dom
+
+Router Route Link Browser
+
+尽量不要硬编码  使用map  遍历
+
+props = {
+  histroy
+  location:{
+    query:{}
+  }
+  params:{}
+}
+
+新版本使用 props.match.params
+
+fetch 兼容性   across-fetch
+
+
+
+dva g component tester
+dva g route tester
+dva g model tester
+
+
+
+
+
+
+
+
+
+1.
+<div style={{display:this.state.flag ? 'block': 'none'}}>is show</div>

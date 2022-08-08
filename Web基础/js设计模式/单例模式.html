@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+<script>
+  function Singleton(){}
+
+  Singleton.getInstance = function(){
+    if(this.instance){
+      return this.instance
+    }
+    this.instance = new Singleton()
+    return this.instance;
+  }
+
+  //全局数据存储对象
+  function store(){
+    if(!(this instanceof store)){
+      return new store()
+    }
+
+    if(store.instance){
+      return store.instance
+    }
+    store.instance = this;
+  }
+</script>
+</body>
+</html>

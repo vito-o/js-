@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+</head>
+<body>
+    <div id="wrap">111</div>
+    <div id="wrap2" ONCLICK="method()">222</div>
+
+    <script>
+        var dom = document.getElementById('wrap')
+        dom.onclick = function(){
+            console.log(111)
+        }
+
+        function method(){
+            console.log(222)
+        }
+    
+    </script>
+    <!-- <script src="js_base/index.js"></script> -->
+</body>
+</html>

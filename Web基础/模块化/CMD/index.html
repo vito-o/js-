@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+</head>
+<body>
+  <div class="wrap"></div>
+  <script src="./js/sea.js"></script>
+  <script>
+    
+    /**
+     * CMD是另一种模块化方案，它与AMD类似，不同点在于，AMD推崇依赖前置，提前执行
+     * CMD推崇依赖就近，延迟执行。此规范在sea.js推广过程中产生
+     * 
+     */
+    seajs.use(['main.js'], function(main){
+      console.log(main)
+      main.add(1,2)
+    })
+    
+  </script>
+</body>
+</html>
